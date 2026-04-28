@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VetScan — Animal Disease Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/vetscan.css') }}"/>
+  <style>
+    .vs-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      background: rgba(34, 197, 94, 0.2);
+      border: 1.5px solid rgba(34, 197, 94, 0.4);
+      border-radius: 999px;
+      color: #ffffff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      backdrop-filter: blur(6px);
+      min-height: 44px;
+    }
+    .vs-back-btn:hover {
+      background: rgba(34, 197, 94, 0.4);
+      transform: translateX(-3px);
+      border-color: rgba(34, 197, 94, 0.6);
+    }
+    .vs-back-btn svg {
+      width: 16px; height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    @media (max-width: 600px) {
+      .vs-back-btn { font-size: 0.8rem; padding: 8px 14px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <!-- Smart Back Button -->
+    {% if current_user %}
+      <a href="{{ url_for('main.index') }}" class="vs-back-btn" aria-label="Back to Dashboard">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        Back
+      </a>
+    {% else %}
+      <a href="{{ url_for('index') }}" class="vs-back-btn" aria-label="Back to Home">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        Back
+      </a>
+    {% endif %}
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <span class="logo-name">Vet<span>Scan</span></span>
+    </div>
+    <div class="header-stat">
+      <strong>{{ meta.num_classes }}</strong>
+      disease classes · {{ meta.total_samples }} records
+    </div>
+  </header>
+
+  <div class="hero">
+    <div>
+      <h1>Animal Disease<br/><em>Prediction</em> System</h1>
+      <p>Enter your animal's details and observed symptoms — the model will predict the most likely disease with confidence scores.</p>
+    </div>
+    <span class="hero-badge">Random Forest · Trained</span>
+  </div>
+
+  <div class="layout">
+
+    <!-- ── LEFT: FORM ── -->
+    <div class="card">
+
+      <!-- Animal Info -->
+      <div class="section-title">
+        <div class="section-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        Animal Information
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Animal Type</label>
+          <select id="animal_type" onchange="updateBreeds()">
+            {% for a in animal_types %}
+            <option value="{{ a }}">{{ a }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Breed</label>
+          <select id="breed">
+            {% for b in breeds_by_animal[animal_types[0]] %}
+            <option value="{{ b }}">{{ b }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row three">
+        <div class="field">
+          <label>Age (years)</label>
+          <input type="number" id="age" value="3" min="0" max="30"/>
+        </div>
+        <div class="field">
+          <label>Gender</label>
+          <select id="gender">
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Weight (kg)</label>
+          <input type="number" id="weight" value="20" step="0.5" min="0.1" max="1000"/>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Vitals -->
+      <div class="section-title">
+        <div class="section-icon">
+          <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        Vital Signs
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Body Temperature (°C)</label>
+          <input type="number" id="body_temperature" value="39.0" step="0.1" min="35" max="43"/>
+        </div>
+        <div class="field">
+          <label>Heart Rate (bpm)</label>
+          <input type="number" id="heart_rate" value="100" min="30" max="220"/>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Duration of Illness</label>
+          <select id="duration">
+            <option value="1">1 day</option>
+            <option value="2">2 days</option>
+            <option value="3" selected>3 days</option>
+            <option value="5">5 days</option>
+            <option value="7">1 week</option>
+            <option value="10">10 days</option>
+            <option value="14">2 weeks</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Symptoms -->
+      <div class="section-title">
+        <div class="section-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        Primary Symptoms
+      </div>
+
+      <div class="symptom-grid">
+        {% set sym_labels = ['Primary Symptom', 'Secondary Symptom', 'Symptom 3', 'Symptom 4'] %}
+        {% set sym_ids = ['symptom_1','symptom_2','symptom_3','symptom_4'] %}
+        {% for i in range(4) %}
+        <div class="field">
+          <label>{{ sym_labels[i] }}</label>
+          <select id="{{ sym_ids[i] }}">
+            {% for s in all_symptoms %}
+            <option value="{{ s }}" {% if loop.index == i+1 %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Clinical Signs -->
+      <div class="section-title">
+        <div class="section-icon">
+          <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        </div>
+        Clinical Signs
+      </div>
+
+      {% set signs = [
+        ('appetite_loss','Appetite Loss'),
+        ('vomiting','Vomiting'),
+        ('diarrhea','Diarrhea'),
+        ('coughing','Coughing'),
+        ('labored_breathing','Labored Breathing'),
+        ('lameness','Lameness'),
+        ('skin_lesions','Skin Lesions'),
+        ('nasal_discharge','Nasal Discharge'),
+        ('eye_discharge','Eye Discharge')
+      ] %}
+
+      <div class="symptom-grid">
+        {% for id, label in signs %}
+        <div class="field">
+          <label>{{ label }}</label>
+          <div class="toggle-group">
+            <button type="button" class="toggle-btn active-yes" onclick="setToggle('{{ id }}', 'Yes', this)">Yes</button>
+            <button type="button" class="toggle-btn" onclick="setToggle('{{ id }}', 'No', this)">No</button>
+          </div>
+          <input type="hidden" id="{{ id }}" value="Yes"/>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="error-msg" id="error-msg"></div>
+
+      <button class="predict-btn" id="predict-btn" onclick="runPrediction()">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Predict Disease
+      </button>
+    </div>
+
+    <!-- ── RIGHT: RESULTS ── -->
+    <div id="results-panel">
+      <div class="card" id="results-card">
+        <div class="results-placeholder" id="placeholder">
+          <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <p>Fill in the animal's details<br/>and click <strong>Predict Disease</strong><br/>to see results here.</p>
+        </div>
+        <div id="results-content" style="display:none"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script id="breeds-data" type="application/json">
+    {{ breeds_by_animal | tojson | safe }}
+</script>
+<script>
+    const breedsByAnimal = JSON.parse(document.getElementById('breeds-data').textContent);
+</script>
+<script src="{{ url_for('static', filename='js/vetscan.js') }}"></script>
+</body>
+</html>

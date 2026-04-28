@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard - VetSync{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <h1>My <span>Dashboard</span></h1>
+    <p>Welcome back, {{ user.first_name }} {{ user.last_name }}!</p>
+</section>
+
+<section class="dashboard-section">
+    <div class="dashboard-container">
+
+        <!-- Profile Card -->
+        <div class="dashboard-sidebar">
+            <div class="profile-card">
+                <div class="profile-avatar">{{ user.first_name[0] }}{{ user.last_name[0] }}</div>
+                <h3>{{ user.first_name }} {{ user.last_name }}</h3>
+                <p>{{ user.email }}</p>
+                {% if user.contact %}<p>📞 {{ user.contact }}</p>{% endif %}
+                <p class="member-since">Member since {{ user.created_at.strftime('%b %Y') }}</p>
+            </div>
+            <div class="dash-quick-links">
+                <a href="{{ url_for('booking.booking_page') }}" class="dash-link">📅 New Booking</a>
+                <a href="{{ url_for('main.services_page') }}" class="dash-link">🩺 Services</a>
+                <a href="{{ url_for('main.contact') }}" class="dash-link">✉️ Contact Us</a>
+            </div>
+        </div>
+
+        <!-- Bookings Table -->
+        <div class="dashboard-main">
+            <div class="dash-header">
+                <h2>My Appointments</h2>
+                <span class="booking-count">{{ bookings|length }} total</span>
+            </div>
+
+            {% if bookings %}
+            <div class="bookings-table-wrap">
+                <table class="bookings-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Service</th>
+                            <th>Pet</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Payment</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bookings %}
+                        <tr>
+                            <td class="booking-id">#{{ b.id }}</td>
+                            <td>
+                                <span class="svc-badge">
+                                    {{ b.service_ref.icon }} {{ b.service_ref.name }}
+                                </span>
+                            </td>
+                            <td>
+                                <strong>{{ b.pet_name or '—' }}</strong>
+                                <br><small>{{ b.pet_type }}{% if b.pet_breed %} · {{ b.pet_breed }}{% endif %}</small>
+                            </td>
+                            <td>{{ b.date.strftime('%b %d, %Y') }}</td>
+                            <td>🕐 {{ b.slot }}</td>
+                            <td>{{ b.payment_method or '—' }}</td>
+                            <td>
+                                <span class="status-badge status-{{ b.status }}">
+                                    {{ b.status|capitalize }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if b.status != 'cancelled' %}
+                                <form action="{{ url_for('booking.cancel_booking', bid=b.id) }}" method="POST"
+                                      onsubmit="return confirm('Cancel this booking?')">
+                                    <button type="submit" class="btn-cancel">Cancel</button>
+                                </form>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-bookings">
+                <div class="no-bookings-icon">📋</div>
+                <h3>No appointments yet</h3>
+                <p>Book your first appointment and it will appear here.</p>
+                <a href="{{ url_for('booking.booking_page') }}" class="btn-primary">Book Now</a>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</section>
+{% endblock %}

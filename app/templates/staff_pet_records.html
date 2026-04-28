@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% block title %}Pet Records - VetSync Clinic{% endblock %}
+
+{% block content %}
+<style>
+    .records-container {
+        max-width: 1200px;
+        margin: 100px auto 40px;
+        padding: 0 20px;
+    }
+    .records-header {
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .search-box {
+        padding: 12px 20px;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 400px;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .search-box:focus { border-color: #0EA5E9; }
+
+    .records-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 30px;
+        align-items: start;
+    }
+
+    .pet-list {
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        overflow: hidden;
+        height: 700px;
+        display: flex;
+        flex-direction: column;
+    }
+    .pet-list-header {
+        padding: 20px;
+        border-bottom: 1px solid #E2E8F0;
+        background: #F8FAFC;
+    }
+    .pet-items {
+        flex: 1;
+        overflow-y: auto;
+    }
+    .pet-item {
+        padding: 16px 20px;
+        border-bottom: 1px solid #F1F5F9;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .pet-item:hover { background: #F0F9FF; }
+    .pet-item.active { background: #E0F2FE; border-left: 4px solid #0EA5E9; }
+
+    .pet-avatar-lg {
+        width: 48px; height: 48px;
+        background: #F1F5F9;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .history-card {
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 30px;
+        min-height: 500px;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+        margin-top: 30px;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 2px;
+        background: #E2E8F0;
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+    }
+    .timeline-dot {
+        position: absolute;
+        left: -34px; top: 4px;
+        width: 10px; height: 10px;
+        background: #0EA5E9;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #0EA5E9;
+    }
+    .timeline-date {
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748B;
+        margin-bottom: 8px;
+    }
+    .timeline-content {
+        background: #F8FAFC;
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid #E2E8F0;
+    }
+    .timeline-title {
+        font-weight: 700;
+        margin: 0 0 5px 0;
+        color: #1E293B;
+    }
+    .timeline-notes {
+        font-size: 14px;
+        color: #475569;
+        margin-top: 8px;
+        font-style: italic;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 100px 20px;
+        color: #94A3B8;
+    }
+</style>
+
+<div class="records-container">
+    <div class="records-header">
+        <h1>Pet <span>Records</span></h1>
+        <input type="text" class="search-box" id="petSearch" placeholder="Search pet or owner name...">
+    </div>
+
+    <div class="records-grid">
+        <!-- Sidebar: Pet List -->
+        <div class="pet-list">
+            <div class="pet-list-header">
+                <h3 style="margin:0;">Patients Directory</h3>
+            </div>
+            <div class="pet-items" id="petItemsList">
+                {% if pet_history %}
+                    {% for key, pet in pet_history.items() %}
+                    <div class="pet-item" onclick="showHistory('{{ pet.name|escape }}', '{{ pet.email|escape }}')">
+                        <div class="pet-avatar-lg">
+                            {% set t = pet.type.lower() %}
+                            {% if 'dog' in t %}🐶
+                            {% elif 'cat' in t %}🐱
+                            {% elif 'bird' in t %}🐦
+                            {% elif 'rabbit' in t %}🐰
+                            {% elif 'fish' in t %}🐟
+                            {% else %}🐾{% endif %}
+                        </div>
+                        <div>
+                            <div style="font-weight:700;">{{ pet.name }}</div>
+                            <div style="font-size:12px; color:#64748B;">Owner: {{ pet.owner }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="padding:20px; color:#64748B;">No records found.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Main View: Medical History -->
+        <div class="history-card" id="historyView">
+            <div class="empty-state">
+                <p style="font-size: 40px; margin-bottom: 20px;">🏥</p>
+                <h3>Select a patient to view history</h3>
+                <p>Detailed medical logs and visitation history will appear here.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="pet-data" type="application/json">
+    {{ pet_history|tojson | safe if pet_history else '{}' }}
+</script>
+
+<script>
+    // Safely parse the complex pet history data from the JSON block
+    const rawData = JSON.parse(document.getElementById('pet-data').textContent);
+    const petData = {};
+    
+    // Normalize keys for easier JS access
+    for (const k in rawData) {
+        // key comes from Flask as "['Name', 'Email']"
+        // we can just use the key as is, or reconstruct
+        petData[k] = rawData[k];
+    }
+
+    function showHistory(name, email) {
+        // Toggle Active
+        document.querySelectorAll('.pet-item').forEach(el => el.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+
+        // Match key format from Python: 'Name|Email'
+        const key = name + '|' + email;
+        const pet = petData[key];
+        
+        if (!pet) {
+            console.error("Pet not found for key", key);
+            return;
+        }
+
+        let html = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:30px;">
+                <div>
+                    <h2 style="margin:0; font-size:28px;">${pet.name}</h2>
+                    <p style="margin:5px 0 0 0; color:#64748B;">${pet.type} • ${pet.breed || 'Unknown Breed'}</p>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-weight:600;">Owner: ${pet.owner}</div>
+                    <div style="font-size:13px; color:#64748B;">${pet.email}</div>
+                </div>
+            </div>
+            
+            <h3 style="border-bottom: 1px solid #E2E8F0; padding-bottom: 10px; margin-bottom: 20px;">Medical Timeline</h3>
+            <div class="timeline">
+        `;
+
+        // Sort records by date descending
+        const sortedRecords = pet.records.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        sortedRecords.forEach(r => {
+            const dateObj = new Date(r.date);
+            const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            
+            html += `
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-date">${dateStr}</div>
+                    <div class="timeline-content">
+                        <div style="display:flex; justify-content:space-between;">
+                            <h4 class="timeline-title">${r.service}</h4>
+                            <span style="font-size:11px; padding:2px 8px; border-radius:10px; background:#E2E8F0; color:#475569;">${r.status.toUpperCase()}</span>
+                        </div>
+                        <p style="margin:5px 0; font-size:14px;"><strong>Reason for Visit:</strong> ${r.reason || 'Not specified'}</p>
+                        ${r.notes ? `<div class="timeline-notes"><strong>Physician Notes:</strong> ${r.notes}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        document.getElementById('historyView').innerHTML = html;
+    }
+
+    // Search filter
+    document.getElementById('petSearch').addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase();
+        document.querySelectorAll('.pet-item').forEach(item => {
+            const text = item.innerText.toLowerCase();
+            item.style.display = text.includes(term) ? 'flex' : 'none';
+        });
+    });
+</script>
+{% endblock %}

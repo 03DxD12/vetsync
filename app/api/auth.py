@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from app.models.user import User
 from app.services.auth_service import create_jwt_token
 from app.services.otp_service import (
@@ -39,8 +39,14 @@ def send_otp_endpoint():
         
     if send_otp_email(email, raw_otp):
         return jsonify({'message': 'OTP sent successfully'}), 200
-    else:
-        return jsonify({'message': 'Failed to send email'}), 500
+
+    if current_app.debug:
+        return jsonify({
+            'message': 'Email delivery is unavailable in this local environment. Use the displayed OTP to continue.',
+            'dev_otp': raw_otp
+        }), 200
+
+    return jsonify({'message': 'Failed to send email'}), 500
 
 
 @api_auth_bp.route('/verify-otp', methods=['POST'])

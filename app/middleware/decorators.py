@@ -69,7 +69,12 @@ def role_required(roles):
             from app.models.user import User
             token = _extract_bearer_token()
             if not token:
-                return jsonify({'message': 'Token is missing!'}), 401
+                user = _get_current_user()
+                if not user:
+                    return jsonify({'message': 'Token is missing!'}), 401
+                if user.role not in roles:
+                    return jsonify({'message': 'Access denied: Insufficient role'}), 403
+                return f(user, *args, **kwargs)
 
             decoded, status = decode_jwt_token(token)
             if status != 200:

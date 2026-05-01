@@ -4,12 +4,9 @@ import numpy as np
 import joblib
 
 # ---------------------------------------------------------------------------
-# Load model assets once at import time
+# Load small metadata at import time; load the large model lazily on prediction.
 # ---------------------------------------------------------------------------
 _BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'ml', 'model')
-
-model    = joblib.load(os.path.join(_BASE, 'disease_model.pkl'))
-encoders = joblib.load(os.path.join(_BASE, 'encoders.pkl'))
 
 with open(os.path.join(_BASE, 'metadata.json')) as f:
     meta = json.load(f)
@@ -19,6 +16,19 @@ ANIMAL_TYPES     = meta['animal_types']
 BREEDS_BY_ANIMAL = meta['breeds_by_animal']
 ALL_SYMPTOMS     = meta['all_symptoms']
 DISEASES         = meta['diseases']
+
+_model = None
+_encoders = None
+
+
+def _load_assets():
+    global _model, _encoders
+    if _model is None or _encoders is None:
+        _model = joblib.load(os.path.join(_BASE, 'disease_model.pkl'))
+        if hasattr(_model, 'n_jobs'):
+            _model.n_jobs = 1
+        _encoders = joblib.load(os.path.join(_BASE, 'encoders.pkl'))
+    return _model, _encoders
 
 # ---------------------------------------------------------------------------
 # Severity mapping
@@ -60,6 +70,7 @@ def encode_safe(le, value) -> int:
 
 
 def build_features(form: dict) -> np.ndarray:
+    _, encoders = _load_assets()
     yn = lambda v: 1 if v == 'Yes' else 0
 
     body_temp = float(form.get('body_temperature', 39.0))
@@ -96,6 +107,7 @@ def build_features(form: dict) -> np.ndarray:
 
 def predict_disease(form: dict) -> list:
     """Returns top-5 disease predictions sorted by confidence."""
+    model, _ = _load_assets()
     X = build_features(form)
     proba = model.predict_proba(X)[0]
     classes = model.classes_

@@ -1,5 +1,5 @@
 from flask import session
-from app.extensions import db, mail
+from app.extensions import db, mail, migrate
 from app.middleware.security import register_security_hooks
 from app.routes import register_blueprints
 from app.api import register_api
@@ -13,6 +13,7 @@ def create_app(config_name='default'):
 
     # Init extensions
     db.init_app(app)
+    migrate.init_app(app, db)
     mail.init_app(app)
 
     # Register security hooks (before/after request)
@@ -32,11 +33,12 @@ def create_app(config_name='default'):
         current_user = db.session.get(User, uid) if uid else None
         return dict(current_user=current_user)
 
-    # DB init + migration guard
-    with app.app_context():
-        db.create_all()
-        _run_migrations()
-        _seed_data()
+    # Local bootstrap guard. Production deployments should use Flask-Migrate.
+    if app.config.get('AUTO_CREATE_DB'):
+        with app.app_context():
+            db.create_all()
+            _run_migrations()
+            _seed_data()
 
     return app
 

@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% block title %}Submitted Reports Review - VetSync{% endblock %}
+
+{% block content %}
+<style>
+    .reports-container {
+        max-width: 1200px;
+        margin: 100px auto 40px;
+        padding: 0 20px;
+    }
+    .reports-header {
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .search-box {
+        padding: 12px 20px;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 400px;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .search-box:focus { border-color: #0EA5E9; }
+
+    .reports-grid {
+        display: grid;
+        grid-template-columns: 400px 1fr;
+        gap: 30px;
+        align-items: start;
+    }
+
+    .report-list {
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        overflow: hidden;
+        height: 700px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .report-list-header {
+        padding: 20px;
+        border-bottom: 1px solid #E2E8F0;
+        background: #F8FAFC;
+    }
+    .report-items {
+        flex: 1;
+        overflow-y: auto;
+    }
+    .report-item {
+        padding: 16px 20px;
+        border-bottom: 1px solid #F1F5F9;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .report-item:hover { background: #F0F9FF; }
+    .report-item.active { background: #E0F2FE; border-left: 4px solid #0EA5E9; }
+
+    .status-pill {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        width: fit-content;
+    }
+    .status-pending { background: #FEF9C3; color: #854D0E; }
+    .status-reviewed { background: #DBEAFE; color: #1E40AF; }
+    .status-resolved { background: #DCFCE7; color: #166534; }
+
+    .review-card {
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 40px;
+        min-height: 600px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .detail-section {
+        margin-bottom: 30px;
+    }
+    .detail-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #64748B;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        display: block;
+    }
+    .detail-content {
+        font-size: 16px;
+        color: #1E293B;
+        line-height: 1.6;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 150px 20px;
+        color: #94A3B8;
+    }
+</style>
+
+<div class="reports-container">
+    <div class="reports-header">
+        <h1>Submitted Reports <span>Review</span></h1>
+        <div style="display:flex; gap:15px; flex:1; justify-content:flex-end; align-items:center;">
+            <input type="text" class="search-box" id="reportSearch" placeholder="Search by title or category..." style="margin:0;">
+            {% if current_user.role == 'staff' %}
+            <button class="action-btn" style="background: #0EA5E9; color: white; border: none; padding: 12px 20px; border-radius: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;" onclick="document.getElementById('reportModal').classList.add('active')">
+                <span>+</span> Submit Report
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="reports-grid">
+        <!-- Sidebar: Report List -->
+        <div class="report-list">
+            <div class="report-list-header">
+                <h3 style="margin:0;">Submissions Audit</h3>
+            </div>
+            <div class="report-items" id="reportItemsList">
+                {% if reports %}
+                    {% for report in reports %}
+                    <div class="report-item" onclick="showReport({{ report.id }})">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="status-pill status-{{ report.status.lower() }}">{{ report.status }}</span>
+                            <span style="font-size:12px; color:#64748B;">{{ report.created_at.strftime('%b %d, %H:%M') }}</span>
+                        </div>
+                        <div style="font-weight:700; font-size:15px;">{{ report.title }}</div>
+                        <div style="font-size:13px; color:#64748B;">{{ report.category }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state" style="padding:40px;">
+                        <p>No reports found.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Main View: Report Details & Review -->
+        <div class="review-card" id="reviewView">
+            <div class="empty-state">
+                <p style="font-size: 50px; margin-bottom: 20px;">📄</p>
+                <h3>Select a report to review</h3>
+                <p>Verify clinical documentation and audit staff submissions.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="reports-data" type="application/json">
+    [
+        {% for report in reports %}
+        {
+            "id": {{ report.id }},
+            "title": "{{ report.title|escape }}",
+            "category": "{{ report.category|escape }}",
+            "description": "{{ report.description|escape }}",
+            "status": "{{ report.status|escape }}",
+            "created_at": "{{ report.created_at.strftime('%Y-%m-%d %H:%M:%S') }}",
+            "user": "{{ report.user_id }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ]
+</script>
+
+<script>
+    const reportsData = JSON.parse(document.getElementById('reports-data').textContent);
+
+    function showReport(id) {
+        // Toggle Active
+        document.querySelectorAll('.report-item').forEach(el => el.classList.remove('active'));
+        // Find element by id - simplified for demo, in real use would use data-id
+        event.currentTarget.classList.add('active');
+
+        const report = reportsData.find(r => r.id === id);
+        if (!report) return;
+
+        const dateObj = new Date(report.created_at);
+        const dateStr = dateObj.toLocaleDateString('en-US', { 
+            month: 'long', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        let html = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px; border-bottom:1px solid #E2E8F0; padding-bottom:20px;">
+                <div>
+                    <h2 style="margin:0; font-size:24px;">${report.title}</h2>
+                    <p style="margin:5px 0 0 0; color:#64748B;">${report.category} • Submitted on ${dateStr}</p>
+                </div>
+                <span class="status-pill status-${report.status.lower()}" style="font-size:14px; padding:6px 12px; border-radius:12px;">${report.status}</span>
+            </div>
+            
+            <div class="detail-section">
+                <span class="detail-label">Report Content</span>
+                <div class="detail-content" style="background:#F8FAFC; padding:20px; border-radius:12px; border:1px solid #E2E8F0;">
+                    ${report.description}
+                </div>
+            </div>
+
+            {% if current_user.role == 'admin' %}
+            <div class="detail-section">
+                <span class="detail-label">Review Actions</span>
+                <div style="display:flex; gap:15px; margin-top:10px;">
+                    <button class="action-btn" style="background:#E0F2FE; color:#0369A1; border:1px solid #BAE6FD; padding:10px 20px; border-radius:10px; font-weight:600; cursor:pointer;" onclick="updateStatus(${report.id}, 'Reviewed')">Mark as Reviewed</button>
+                    <button class="action-btn" style="background:#DCFCE7; color:#15803D; border:1px solid #BBF7D0; padding:10px 20px; border-radius:10px; font-weight:600; cursor:pointer;" onclick="updateStatus(${report.id}, 'Resolved')">Mark as Resolved</button>
+                </div>
+            </div>
+            {% endif %}
+        `;
+
+        document.getElementById('reviewView').innerHTML = html;
+    }
+
+    async function updateStatus(id, status) {
+        // Placeholder for actual API call
+        alert(`Updating report #${id} to ${status}`);
+        // In real app: fetch(`/api/v1/reports/${id}/status`, { method: 'POST', ... })
+    }
+
+    // Search filter
+    document.getElementById('reportSearch').addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase();
+        document.querySelectorAll('.report-item').forEach(item => {
+            const text = item.innerText.toLowerCase();
+            item.style.display = text.includes(term) ? 'flex' : 'none';
+        });
+    });
+</script>
+{% if current_user.role == 'staff' %}
+<!-- Modal: Report Submission -->
+<div class="modal-overlay" id="reportModal" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease;">
+    <div class="modal-box" style="background: white; border-radius: 24px; width: 100%; max-width: 500px; padding: 40px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);">
+        <h2 style="margin-top:0; color:#1E293B; font-size:24px; margin-bottom: 8px;">Create Report</h2>
+        <p style="color:#64748B; font-size:14px; margin-bottom:24px;">Submit logs or issues to administration.</p>
+        
+        <form id="reportForm" style="display:flex; flex-direction:column; gap:20px;">
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <label style="font-size:14px; font-weight:600; color:#1E293B;">Report Title</label>
+                <input type="text" id="repTitle" required style="padding:12px; border-radius:10px; border:1px solid #E2E8F0; font-size:15px;">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <label style="font-size:14px; font-weight:600; color:#1E293B;">Category</label>
+                <select id="repCat" required style="padding:12px; border-radius:10px; border:1px solid #E2E8F0; font-size:15px;">
+                    <option value="Daily Summary">Daily Summary</option>
+                    <option value="Incident">Incident Report</option>
+                    <option value="Patient Issue">Patient Issue</option>
+                    <option value="System Issue">System Issue</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <label style="font-size:14px; font-weight:600; color:#1E293B;">Description</label>
+                <textarea id="repDesc" required rows="5" style="padding:12px; border-radius:10px; border:1px solid #E2E8F0; resize:vertical; font-size:15px;"></textarea>
+            </div>
+            
+            <div style="display:flex; justify-content:flex-end; gap:16px; margin-top:16px;">
+                <button type="button" style="background:none; border:none; color:#64748B; font-weight:600; cursor:pointer;" onclick="document.getElementById('reportModal').classList.remove('active')">Cancel</button>
+                <button type="submit" style="background:#0EA5E9; color:white; border:none; padding:12px 24px; border-radius:10px; font-weight:700; cursor:pointer;">Submit Report</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Handle Modal Show/Hide
+    const rModal = document.getElementById('reportModal');
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'class') {
+                rModal.style.display = rModal.classList.contains('active') ? 'flex' : 'none';
+                rModal.style.opacity = rModal.classList.contains('active') ? '1' : '0';
+            }
+        });
+    });
+    observer.observe(rModal, { attributes: true });
+
+    document.getElementById('reportForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            const res = await fetch('/api/v1/reports', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: document.getElementById('repTitle').value,
+                    category: document.getElementById('repCat').value,
+                    description: document.getElementById('repDesc').value
+                })
+            });
+            if (res.ok) {
+                alert("Report submitted successfully.");
+                rModal.classList.remove('active');
+                location.reload();
+            }
+        } catch (e) { alert("Error sending report."); }
+    });
+</script>
+{% endif %}
+{% endblock %}

@@ -196,8 +196,6 @@
     
     // Normalize keys for easier JS access
     for (const k in rawData) {
-        // key comes from Flask as "['Name', 'Email']"
-        // we can just use the key as is, or reconstruct
         petData[k] = rawData[k];
     }
 
@@ -248,7 +246,7 @@
                             <span style="font-size:11px; padding:2px 8px; border-radius:10px; background:#E2E8F0; color:#475569;">${r.status.toUpperCase()}</span>
                         </div>
                         <p style="margin:5px 0; font-size:14px;"><strong>Reason for Visit:</strong> ${r.reason || 'Not specified'}</p>
-                        ${r.notes ? `<div class="timeline-notes"><strong>Physician Notes:</strong> ${r.notes}</div>` : ''}
+                        ${r.notes ? \`<div class="timeline-notes"><strong>Physician Notes:</strong> \${r.notes}</div>\` : ''}
                     </div>
                 </div>
             `;

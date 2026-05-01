@@ -2,8 +2,10 @@ from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from app.extensions import db
 from app.models.booking import Booking
+from app.models.report import Report
 from app.models.availability import DoctorAvailability
-from app.middleware.decorators import login_required, staff_required, _get_current_user
+from app.models.user import User
+from app.middleware.decorators import login_required, admin_required, staff_required, _get_current_user
 from app.services.push_service import send_push_notification
 
 staff_bp = Blueprint('staff', __name__, url_prefix='/staff')
@@ -16,6 +18,23 @@ def appointments():
     user     = _get_current_user()
     bookings = Booking.query.order_by(Booking.date.desc(), Booking.slot.desc()).all()
     return render_template('staff_appointments.html', user=user, bookings=bookings)
+
+
+@staff_bp.route('/submitted-reports')
+@login_required
+@staff_required
+def submitted_reports():
+    user = _get_current_user()
+    # View all submitted reports for validation/audit
+    reports = Report.query.order_by(Report.created_at.desc()).all()
+    return render_template('staff_submitted_reports.html', user=user, reports=reports)
+
+
+@staff_bp.route('/offers')
+@login_required
+@staff_required
+def offers():
+    return render_template('staff_offers.html', user=_get_current_user())
 
 
 @staff_bp.route('/pet-records')
@@ -39,11 +58,13 @@ def pet_records():
     return render_template('staff_pet_records.html', user=user, pet_history=pet_history)
 
 
-@staff_bp.route('/offers')
+@staff_bp.route('/audit-logs')
 @login_required
-@staff_required
-def offers():
-    return render_template('staff_offers.html', user=_get_current_user())
+@admin_required
+def audit_logs():
+    user = _get_current_user()
+    # In a real system, this would pull from an AuditLog model
+    return render_template('admin_audit_logs.html', user=user)
 
 
 @staff_bp.route('/booking/<int:bid>/status', methods=['POST'])

@@ -19,3 +19,7 @@ instance/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Large Files / Models
+*.pkl
+ml/model/

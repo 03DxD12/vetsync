@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1a3c8f" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="VetSync" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>{% block title %}VetSync Clinic{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
@@ -17,9 +22,12 @@
       rel="manifest"
       href="{{ url_for('static', filename='manifest.json') }}"
     />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/pwa-icon-192.png') }}" />
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/pwa-icon-180.png') }}" />
     {% block extra_css %}{% endblock %}
   </head>
   <body>
+    <a href="#main-content" class="skip-link">Skip to content</a>
     <!-- NAVBAR -->
     <nav class="navbar" id="navbar">
       <div class="nav-container">
@@ -27,7 +35,7 @@
           <span class="logo-icon">🐾</span>
           <span class="logo-text">VetSync</span>
         </a>
-        <ul class="nav-links">
+        <ul class="nav-links" id="primary-navigation">
           {% if current_user and current_user.role in ['staff', 'admin'] %}
           <li>
             <a
@@ -36,6 +44,7 @@
               >Dashboard</a
             >
           </li>
+          {% if current_user.role == 'staff' %}
           <li>
             <a
               href="{{ url_for('staff.appointments') }}"
@@ -45,18 +54,34 @@
           </li>
           <li>
             <a
+              href="{{ url_for('staff.submitted_reports') }}"
+              class="{% if request.endpoint == 'staff.submitted_reports' %}active{% endif %}"
+              >Submitted Reports Review</a
+            >
+          </li>
+          <li>
+            <a
               href="{{ url_for('staff.pet_records') }}"
               class="{% if request.endpoint == 'staff.pet_records' %}active{% endif %}"
               >Pet Records</a
             >
           </li>
+          {% elif current_user.role == 'admin' %}
           <li>
             <a
-              href="{{ url_for('dashboard.staff_dashboard') if current_user.role == 'staff' else url_for('dashboard.admin_dashboard') }}#schedule"
-              class=""
-              >Schedule</a
+              href="{{ url_for('staff.submitted_reports') }}"
+              class="{% if request.endpoint == 'staff.submitted_reports' %}active{% endif %}"
+              >Submitted Reports Review</a
             >
           </li>
+          <li>
+            <a
+              href="{{ url_for('staff.audit_logs') }}"
+              class="{% if request.endpoint == 'staff.audit_logs' %}active{% endif %}"
+              >Audit Logs</a
+            >
+          </li>
+          {% endif %}
           {% else %}
           <li>
             <a
@@ -124,7 +149,7 @@
           </div>
           {% endif %}
         </div>
-        <button class="hamburger" onclick="toggleMenu()">☰</button>
+        <button class="hamburger" type="button" onclick="toggleMenu()" aria-label="Open navigation menu" aria-expanded="false" aria-controls="primary-navigation">☰</button>
       </div>
     </nav>
 
@@ -142,7 +167,7 @@
     {% endif %} {% endwith %}
 
     <!-- MAIN CONTENT -->
-    <main>{% block content %}{% endblock %}</main>
+    <main id="main-content" tabindex="-1">{% block content %}{% endblock %}</main>
 
     <!-- FOOTER -->
     <footer class="footer">
@@ -211,7 +236,8 @@
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
           navigator.serviceWorker.register(
-            "{{ url_for('static', filename='service-worker.js') }}",
+            "{{ url_for('main.service_worker') }}",
+            { scope: "/" },
           );
         });
       }

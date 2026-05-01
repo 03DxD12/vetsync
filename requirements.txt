@@ -4,7 +4,9 @@
 # Core Framework
 Flask==3.0.0
 Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.5
 Flask-Mail
+psycopg2-binary
 
 # Authentication & Security
 PyJWT==2.8.0

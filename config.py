@@ -3,8 +3,15 @@ from datetime import timedelta
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'vetsync-secret-key-2024')
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///vetsync.db')
+    _database_url = os.getenv(
+        'DATABASE_URL',
+        'postgresql://username:password@localhost:5432/vetsync_db'
+    )
+    if _database_url.startswith('postgres://'):
+        _database_url = _database_url.replace('postgres://', 'postgresql://', 1)
+    SQLALCHEMY_DATABASE_URI = _database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    AUTO_CREATE_DB = os.getenv('AUTO_CREATE_DB', 'false').lower() == 'true'
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'super-secret-jwt-key')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
 
@@ -35,6 +42,7 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
     SESSION_COOKIE_SECURE = False
+    AUTO_CREATE_DB = os.getenv('AUTO_CREATE_DB', 'false').lower() == 'true'
 
 
 class ProductionConfig(Config):

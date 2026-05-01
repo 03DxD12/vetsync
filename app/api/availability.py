@@ -2,13 +2,12 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from app.extensions import db
 from app.models.availability import DoctorAvailability
-from app.middleware.decorators import jwt_required, role_required
+from app.middleware.decorators import role_required
 
 api_availability_bp = Blueprint('api_availability', __name__)
 
 
 @api_availability_bp.route('', methods=['GET'])
-@jwt_required
 @role_required(['staff', 'admin'])
 def get_schedule(current_user_jwt):
     blocks = DoctorAvailability.query.all()
@@ -16,7 +15,6 @@ def get_schedule(current_user_jwt):
 
 
 @api_availability_bp.route('/block', methods=['POST'])
-@jwt_required
 @role_required(['staff', 'admin'])
 def block_time(current_user_jwt):
     data = request.get_json()
@@ -32,7 +30,6 @@ def block_time(current_user_jwt):
 
 
 @api_availability_bp.route('/unblock', methods=['DELETE'])
-@jwt_required
 @role_required(['staff', 'admin'])
 def unblock_time(current_user_jwt):
     data = request.get_json()
@@ -51,22 +48,50 @@ def unblock_time(current_user_jwt):
 @api_availability_bp.route('/workload', methods=['GET'])
 @role_required(['staff', 'admin'])
 def get_workload(current_user_jwt):
-    from datetime import date
+    from datetime import date, datetime
     from app.models.booking import Booking
+    from sqlalchemy import extract
 
     today = date.today()
-    slots = ["8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM",
-             "1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM",
-             "6:00 PM","7:00 PM","8:00 PM","9:00 PM"]
+    year = request.args.get('year', default=today.year, type=int)
+    month = request.args.get('month', default=today.month, type=int)
+    granularity = request.args.get('granularity', default='hourly')
 
-    counts = {slot: Booking.query.filter_by(date=today, slot=slot, status='confirmed').count()
-              for slot in slots}
+    bookings = Booking.query.filter(
+        extract('year', Booking.date) == year,
+        extract('month', Booking.date) == month,
+        Booking.status == 'confirmed'
+    ).all()
 
-    confirmed_today = Booking.query.filter_by(date=today, status='confirmed').count()
-    percentage = round(confirmed_today / len(slots) * 100, 1) if slots else 0
+    counts = {}
+    total_confirmed = len(bookings)
+
+    for b in bookings:
+        if granularity == 'hourly':
+            try:
+                # Convert "9:00 AM" to actual time object
+                t = datetime.strptime(b.slot, "%I:%M %p").time()
+                dt = datetime.combine(b.date, t)
+                key = dt.isoformat()
+            except:
+                key = datetime.combine(b.date, datetime.min.time()).isoformat()
+        else: # daily
+            key = b.date.isoformat()
+            
+        counts[key] = counts.get(key, 0) + 1
+
+    data_points = [{'x': k, 'y': v} for k, v in counts.items()]
+    data_points.sort(key=lambda item: item['x'])
+
+    # Determine percentage (simplistic logic based on max capacity)
+    import calendar
+    _, days_in_month = calendar.monthrange(year, month)
+    max_slots = days_in_month * 14
+    percentage = round((total_confirmed / max_slots) * 100, 1) if max_slots else 0
 
     return jsonify({
-        'hourly': counts,
-        'total_confirmed': confirmed_today,
-        'percentage': percentage
+        'data_points': data_points,
+        'total_confirmed': total_confirmed,
+        'percentage': percentage,
+        'granularity': granularity
     }), 200

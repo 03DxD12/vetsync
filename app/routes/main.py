@@ -1,5 +1,5 @@
 from datetime import date
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_from_directory, current_app
 from app.extensions import db
 from app.models.service import Service
 from app.models.contact import ContactMessage
@@ -48,3 +48,20 @@ def contact():
 @main_bp.route('/offline')
 def offline_page():
     return render_template('offline.html')
+
+
+@main_bp.route('/service-worker.js')
+def service_worker():
+    response = send_from_directory(current_app.static_folder, 'service-worker.js')
+    response.headers['Service-Worker-Allowed'] = '/'
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+
+@main_bp.route('/favicon.ico')
+def favicon():
+    return send_from_directory(
+        f'{current_app.static_folder}/images',
+        'pwa-icon-192.png',
+        mimetype='image/png'
+    )

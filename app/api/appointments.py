@@ -53,7 +53,6 @@ def appointments(current_user_jwt):
 
 
 @api_appointments_bp.route('/<int:booking_id>', methods=['PUT'])
-@jwt_required
 @role_required(['staff', 'admin'])
 def update_appointment(current_user_jwt, booking_id):
     booking = db.session.get(Booking, booking_id)
@@ -77,7 +76,6 @@ def update_appointment(current_user_jwt, booking_id):
 
 
 @api_appointments_bp.route('/<int:booking_id>', methods=['DELETE'])
-@jwt_required
 @role_required(['staff', 'admin'])
 def delete_appointment(current_user_jwt, booking_id):
     booking = db.session.get(Booking, booking_id)

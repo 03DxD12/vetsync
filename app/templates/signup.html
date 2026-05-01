@@ -83,6 +83,9 @@
             const data = await response.json();
             if (response.ok) {
                 openOtpModal(email);
+                if (data.dev_otp) {
+                    alert(`Local testing OTP: ${data.dev_otp}`);
+                }
             } else {
                 alert(data.message || "Failed to send OTP. Please try again.");
                 signupBtn.disabled = false;

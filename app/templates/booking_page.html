@@ -209,6 +209,7 @@
 
         <!-- PROGRESS -->
         <div class="progress-bar-wrap">
+            <div class="mobile-step-label">Step <span id="mobile-step-num">1</span>/5</div>
             <div class="progress-step active" id="prog-1">
                 <div class="step-circle" id="sc-1">1</div>
                 <span>Appointment</span>
@@ -526,6 +527,11 @@ function renderStep(n) {
             lineEl.style.background = (i < n) ? '#00c9b1' : '#e8eef8';
         }
     }
+    
+    // Update mobile label
+    var mobNum = document.getElementById('mobile-step-num');
+    if (mobNum) mobNum.textContent = n;
+    
     currentStep = n;
     window.scrollTo({ top: document.querySelector('.booking-page-section').offsetTop - 80, behavior: 'smooth' });
 }

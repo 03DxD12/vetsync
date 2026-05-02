@@ -24,6 +24,7 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
+    ENFORCE_HTTPS = os.getenv('ENFORCE_HTTPS', 'false').lower() == 'true'
 
     VAPID_PUBLIC_KEY = os.getenv(
         'VAPID_PUBLIC_KEY',
@@ -48,6 +49,7 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     SESSION_COOKIE_SECURE = True
+    ENFORCE_HTTPS = os.getenv('ENFORCE_HTTPS', 'true').lower() == 'true'
 
 
 config = {

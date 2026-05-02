@@ -132,8 +132,20 @@
 
     .empty-state {
         text-align: center;
-        padding: 100px 20px;
+        padding: 60px 20px;
         color: #94A3B8;
+    }
+
+    @media (max-width: 900px) {
+        .records-container { margin-top: 80px; padding: 0 16px; }
+        .records-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+        .records-header h1 { font-size: 26px; }
+        .records-header .search-box { max-width: 100%; }
+        .records-grid { grid-template-columns: 1fr; gap: 20px; }
+        .pet-list { height: 400px; }
+        .history-card { padding: 20px; min-height: auto; }
+        .timeline { padding-left: 20px; }
+        .timeline-dot { left: -24px; }
     }
 </style>
 

@@ -2,6 +2,8 @@
 const navbar = document.getElementById('navbar');
 const navLinks = document.querySelector('.nav-links');
 const hamburger = document.querySelector('.hamburger');
+const blurOverlay = document.getElementById('blurOverlay');
+let menuTransitionLocked = false;
 
 if (navbar) {
     window.addEventListener('scroll', () => {
@@ -16,18 +18,45 @@ function setMenuState(isOpen) {
     if (hamburger) {
         hamburger.setAttribute('aria-expanded', String(isOpen));
         hamburger.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+        hamburger.classList.toggle('active', isOpen);
     }
     
-    // Add class to body for overlay and scroll lock
+    if (blurOverlay) {
+        blurOverlay.classList.toggle('active', isOpen);
+    }
+    
     document.body.classList.toggle('menu-open', isOpen);
 }
 
 function toggleMenu() {
+    if (menuTransitionLocked) return;
+    menuTransitionLocked = true;
     setMenuState(!(navLinks && navLinks.classList.contains('open')));
+    setTimeout(() => {
+        menuTransitionLocked = false;
+    }, 180);
 }
 
+// Close when clicking links
 document.querySelectorAll('.nav-links a').forEach((link) => {
     link.addEventListener('click', () => setMenuState(false));
+});
+
+// Close when clicking overlay or outside
+document.addEventListener('click', (event) => {
+    if (!navLinks || !navLinks.classList.contains('open')) return;
+    if (navLinks.contains(event.target) || (hamburger && hamburger.contains(event.target))) return;
+    setMenuState(false);
+});
+
+if (blurOverlay) {
+    blurOverlay.addEventListener('click', () => setMenuState(false));
+}
+
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 1023) {
+        setMenuState(false);
+    }
 });
 
 document.addEventListener('keydown', (event) => {
@@ -39,7 +68,9 @@ document.addEventListener('keydown', (event) => {
 // ===================== SMOOTH SCROLL =====================
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
     anchor.addEventListener('click', function (event) {
-        const target = document.querySelector(this.getAttribute('href'));
+        const selector = this.getAttribute('href');
+        if (!selector || selector === '#') return;
+        const target = document.querySelector(selector);
         if (target) {
             event.preventDefault();
             window.scrollTo({

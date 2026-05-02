@@ -1,12 +1,14 @@
-import time
+import re
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from app.extensions import db
 from app.models.user import User
 from app.middleware.decorators import _get_current_user
 from app.services.auth_service import create_jwt_token
+from app.services.rate_limiter import clear_attempts, is_limited, record_failure
 from app.utils.sanitize import clean_input
 
 auth_bp = Blueprint('auth', __name__)
+EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
@@ -18,6 +20,14 @@ def signup():
         ct  = clean_input(request.form.get('contact', ''))
         pw  = request.form.get('password', '')
         pw2 = request.form.get('re_password', '')
+
+        if not EMAIL_RE.match(em):
+            flash('Please enter a valid email address.', 'error')
+            return render_template('signup.html')
+
+        if len(pw) < 8:
+            flash('Password must be at least 8 characters.', 'error')
+            return render_template('signup.html')
 
         if pw != pw2:
             flash('Passwords do not match.', 'error')
@@ -71,6 +81,14 @@ def login():
 
         email    = clean_input(data.get('email', '').lower())
         password = data.get('password', '')
+        rate_key = _login_rate_key(email)
+
+        if is_limited(rate_key):
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'error': 'Too many failed login attempts. Please try again later.'}), 429
+            flash('Too many failed login attempts. Please try again later.', 'error')
+            return render_template('login.html'), 429
+
         user     = User.query.filter_by(email=email).first()
 
         if user and user.check_password(password):
@@ -85,6 +103,7 @@ def login():
             session['ip']        = request.remote_addr
             session['user_agent']= request.headers.get('User-Agent')
             session.permanent    = True
+            clear_attempts(rate_key)
 
             access_token = create_jwt_token(user.id, user.role)
 
@@ -110,7 +129,9 @@ def login():
             return redirect(next_url)
         else:
             if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                record_failure(rate_key)
                 return jsonify({'error': 'Invalid email or password.'}), 401
+            record_failure(rate_key)
             flash('Invalid email or password.', 'error')
             return render_template('login.html')
 
@@ -127,3 +148,7 @@ def logout():
     session.clear()
     flash('Logged out successfully.', 'success')
     return redirect(url_for('main.index'))
+
+
+def _login_rate_key(email):
+    return f"login:{request.remote_addr or 'unknown'}:{email}"

@@ -34,7 +34,8 @@
             </div>
 
             {% if bookings %}
-            <div class="bookings-table-wrap">
+            <!-- Desktop Table View -->
+            <div class="bookings-table-wrap hide-mobile">
                 <table class="bookings-table">
                     <thead>
                         <tr>
@@ -83,6 +84,40 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Mobile Card View -->
+            <div class="bookings-cards show-mobile">
+                {% for b in bookings %}
+                <div class="booking-mobile-card">
+                    <div class="bmc-header">
+                        <span class="bmc-id">#{{ b.id }}</span>
+                        <span class="status-badge status-{{ b.status }}">{{ b.status|capitalize }}</span>
+                    </div>
+                    <div class="bmc-body">
+                        <div class="bmc-row">
+                            <span class="bmc-label">Service:</span>
+                            <span class="bmc-val">{{ b.service_ref.icon }} {{ b.service_ref.name }}</span>
+                        </div>
+                        <div class="bmc-row">
+                            <span class="bmc-label">Pet:</span>
+                            <span class="bmc-val"><strong>{{ b.pet_name or '—' }}</strong> ({{ b.pet_type }})</span>
+                        </div>
+                        <div class="bmc-row">
+                            <span class="bmc-label">Schedule:</span>
+                            <span class="bmc-val">{{ b.date.strftime('%b %d') }} at {{ b.slot }}</span>
+                        </div>
+                    </div>
+                    <div class="bmc-footer">
+                        {% if b.status != 'cancelled' %}
+                        <form action="{{ url_for('booking.cancel_booking', bid=b.id) }}" method="POST"
+                              onsubmit="return confirm('Cancel this booking?')">
+                            <button type="submit" class="btn-cancel-mobile">Cancel Appointment</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
             </div>
             {% else %}
             <div class="no-bookings">

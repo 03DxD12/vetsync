@@ -121,6 +121,76 @@
     .btn-cancel:hover { background: #FEF3C7; }
     .btn-delete { color: #EF4444; border-color: #FECACA; background: #FEF2F2; }
     .btn-delete:hover { background: #FEE2E2; }
+
+    /* Mobile Appointment Cards */
+    .registry-cards {
+        display: none;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .reg-card {
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+    }
+    .reg-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #F1F5F9;
+        padding-bottom: 12px;
+    }
+    .reg-card-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .reg-info-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .reg-label {
+        font-size: 11px;
+        color: #64748B;
+        text-transform: uppercase;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+    }
+    .reg-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1E293B;
+    }
+    .reg-card-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .reg-card-actions .btn-action {
+        width: 100%;
+        min-height: 46px;
+        font-size: 14px;
+        justify-content: center;
+    }
+
+    @media (max-width: 768px) {
+        .registry-container { margin-top: 80px; padding: 0 16px; }
+        .registry-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+        .registry-header h1 { font-size: 26px; }
+        .registry-header div { width: 100%; }
+        .registry-header .cal-btn { flex: 1; justify-content: center; }
+        
+        .table-card { display: none; }
+        .registry-cards { display: flex; }
+    }
+    @media (max-width: 480px) {
+        .reg-card-body { grid-template-columns: 1fr; }
+    }
 </style>
 
 <div class="registry-container">
@@ -221,6 +291,80 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <!-- MOBILE REGISTRY CARDS -->
+    <div class="registry-cards">
+        {% for b in bookings %}
+        <div class="reg-card">
+            <div class="reg-card-header">
+                <div>
+                    <div class="reg-value" style="font-size:16px;">{{ b.date.strftime('%b %d, %Y') }}</div>
+                    <div class="reg-label">{{ b.slot }}</div>
+                </div>
+                <span class="status-badge status-{{ b.status }}">
+                    {{ b.status|title }}
+                </span>
+            </div>
+            <div class="reg-card-body">
+                <div class="reg-info-group">
+                    <span class="reg-label">Patient</span>
+                    <div class="reg-value">
+                        {% set t = b.pet_type.lower() %}
+                        {% if 'dog' in t %}🐶
+                        {% elif 'cat' in t %}🐱
+                        {% else %}🐾{% endif %}
+                        {{ b.pet_name }}
+                    </div>
+                </div>
+                <div class="reg-info-group">
+                    <span class="reg-label">Client</span>
+                    <div class="reg-value">{{ b.name }}</div>
+                </div>
+                <div class="reg-info-group" style="grid-column: span 2;">
+                    <span class="reg-label">Service</span>
+                    <div class="reg-value">{{ b.service_ref.name }}</div>
+                </div>
+            </div>
+            {% if current_user.role != 'admin' %}
+            <div class="reg-card-actions">
+                {# PENDING #}
+                {% if b.status == 'pending' %}
+                <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                    <input type="hidden" name="status" value="confirmed">
+                    <button type="submit" class="btn-action btn-confirm">✓ Accept Appointment</button>
+                </form>
+                <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                    <input type="hidden" name="status" value="cancelled">
+                    <button type="submit" class="btn-action btn-cancel">✕ Cancel Appointment</button>
+                </form>
+                {% endif %}
+
+                {# CONFIRMED #}
+                {% if b.status == 'confirmed' %}
+                <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                    <input type="hidden" name="status" value="completed">
+                    <button type="submit" class="btn-action btn-finish">🏁 Finish Visit</button>
+                </form>
+                <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                    <input type="hidden" name="status" value="cancelled">
+                    <button type="submit" class="btn-action btn-cancel">✕ Cancel Visit</button>
+                </form>
+                {% endif %}
+
+                {# DELETE #}
+                <form action="{{ url_for('staff.delete_booking', bid=b.id) }}" method="POST" onsubmit="return confirm('Immediately remove this appointment from history?')">
+                    <button type="submit" class="btn-action btn-delete">🗑️ Permanent Delete</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="reg-info-group">
+                <span class="reg-label">Handled By</span>
+                <div class="reg-value">{{ b.handled_by or 'System' }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

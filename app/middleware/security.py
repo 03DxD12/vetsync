@@ -6,6 +6,9 @@ def register_security_hooks(app):
 
     @app.before_request
     def verify_session_integrity():
+        if _https_required(app) and not _request_is_secure():
+            return redirect(request.url.replace('http://', 'https://', 1), code=301)
+
         """
         Session Hijacking Protection:
         Locks the session to the user's IP and User-Agent.
@@ -25,6 +28,10 @@ def register_security_hooks(app):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
+        if _https_required(app):
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         response.headers['Content-Security-Policy'] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
@@ -34,3 +41,11 @@ def register_security_hooks(app):
             "connect-src 'self';"
         )
         return response
+
+
+def _https_required(app):
+    return bool(app.config.get('ENFORCE_HTTPS'))
+
+
+def _request_is_secure():
+    return request.is_secure or request.headers.get('X-Forwarded-Proto', '').lower() == 'https'

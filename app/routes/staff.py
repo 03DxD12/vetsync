@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from app.extensions import db
@@ -34,7 +35,30 @@ def submitted_reports():
 @login_required
 @staff_required
 def offers():
-    return render_template('staff_offers.html', user=_get_current_user())
+    return redirect(url_for('staff.control_panel'))
+
+
+@staff_bp.route('/control-panel')
+@login_required
+@staff_required
+def control_panel():
+    user = _get_current_user()
+    bookings = Booking.query.order_by(Booking.date.asc(), Booking.slot.asc()).all()
+    bookings_json = [{
+        'id': b.id,
+        'date': b.date.isoformat(),
+        'slot': b.slot,
+        'client_name': b.name,
+        'pet_name': b.pet_name,
+        'pet_type': b.pet_type,
+        'service': b.service_ref.name if b.service_ref else 'Unknown',
+        'status': b.status,
+    } for b in bookings]
+    return render_template(
+        'staff_control_panel.html',
+        user=user,
+        bookings_json=json.dumps(bookings_json),
+    )
 
 
 @staff_bp.route('/pet-records')

@@ -104,19 +104,31 @@
 
     .empty-state {
         text-align: center;
-        padding: 150px 20px;
+        padding: 60px 20px;
         color: #94A3B8;
+    }
+
+    @media (max-width: 900px) {
+        .reports-container { margin-top: 80px; padding: 0 16px; }
+        .reports-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+        .reports-header h1 { font-size: 26px; }
+        .reports-header div { width: 100%; flex-direction: column; align-items: stretch !important; gap: 10px !important; }
+        .search-box { max-width: 100%; }
+        .reports-grid { grid-template-columns: 1fr; gap: 20px; }
+        .report-list { height: 400px; }
+        .review-card { padding: 24px; min-height: auto; }
+        .action-btn { width: 100%; justify-content: center; }
     }
 </style>
 
 <div class="reports-container">
     <div class="reports-header">
         <h1>Submitted Reports <span>Review</span></h1>
-        <div style="display:flex; gap:15px; flex:1; justify-content:flex-end; align-items:center;">
-            <input type="text" class="search-box" id="reportSearch" placeholder="Search by title or category..." style="margin:0;">
+        <div style="display:flex; gap:12px; flex:1; justify-content:flex-end; align-items:center;">
+            <input type="text" class="search-box" id="reportSearch" placeholder="Search report title...">
             {% if current_user.role == 'staff' %}
-            <button class="action-btn" style="background: #0EA5E9; color: white; border: none; padding: 12px 20px; border-radius: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;" onclick="document.getElementById('reportModal').classList.add('active')">
-                <span>+</span> Submit Report
+            <button class="action-btn" style="background: #0EA5E9; color: white; border: none; padding: 12px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; white-space: nowrap;" onclick="document.getElementById('reportModal').classList.add('active')">
+                <span>+</span> Create Report
             </button>
             {% endif %}
         </div>

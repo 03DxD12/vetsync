@@ -276,7 +276,7 @@
 
     async function loadBlocked() {
         try {
-            const res = await fetch('/api/v1/schedule/blocked', { headers: getAuthHeaders() });
+            const res = await fetch('/api/v1/schedule', { headers: getAuthHeaders() });
             if (res.ok) blockedSlotsCache = await res.json();
         } catch (e) {}
     }

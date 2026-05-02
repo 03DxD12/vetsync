@@ -16,7 +16,7 @@
     />
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
+      href="{{ url_for('static', filename='css/style.css', v='2.2') }}"
     />
     <link
       rel="manifest"
@@ -28,6 +28,7 @@
   </head>
   <body>
     <a href="#main-content" class="skip-link">Skip to content</a>
+    <div class="blur-overlay" id="blurOverlay"></div>
     <!-- NAVBAR -->
     <nav class="navbar" id="navbar">
       <div class="nav-container">
@@ -66,6 +67,13 @@
               >Pet Records</a
             >
           </li>
+          <li>
+            <a
+              href="{{ url_for('staff.control_panel') }}"
+              class="{% if request.endpoint == 'staff.control_panel' %}active{% endif %}"
+              >Control Panel</a
+            >
+          </li>
           {% elif current_user.role == 'admin' %}
           <li>
             <a
@@ -79,6 +87,13 @@
               href="{{ url_for('staff.audit_logs') }}"
               class="{% if request.endpoint == 'staff.audit_logs' %}active{% endif %}"
               >Audit Logs</a
+            >
+          </li>
+          <li>
+            <a
+              href="{{ url_for('staff.control_panel') }}"
+              class="{% if request.endpoint == 'staff.control_panel' %}active{% endif %}"
+              >Control Panel</a
             >
           </li>
           {% endif %}

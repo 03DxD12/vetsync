@@ -362,14 +362,63 @@
         gap: 4px;
         color: white;
     }
-    .action-accept { background: var(--color-accept); }
+    .action-accept { background: var(--color-accept); color: white; }
     .action-accept:hover { background: #059669; }
-    .action-finish { background: var(--color-finish); }
+    .action-finish { background: var(--color-finish); color: white; }
     .action-finish:hover { background: #2563EB; }
-    .action-cancel { background: white; color: var(--color-cancel); border-color: var(--color-cancel); }
-    .action-cancel:hover { background: #FFF7ED; }
-    .action-delete { background: white; color: var(--color-delete); border-color: var(--color-delete); }
-    .action-delete:hover { background: #FEF2F2; }
+    .action-cancel { background: #FFF7ED; color: var(--color-cancel); border-color: var(--color-cancel); }
+    .action-cancel:hover { background: #FFEDD5; }
+    .action-delete { background: #FEF2F2; color: var(--color-delete); border-color: var(--color-delete); }
+    .action-delete:hover { background: #FEE2E2; }
+
+    /* Appointment Card View for Mobile */
+    .appt-card-mobile {
+        display: none;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .appt-card {
+        background: white;
+        border: 1px solid var(--dash-border);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .appt-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        border-bottom: 1px solid var(--dash-bg);
+        padding-bottom: 8px;
+    }
+    .appt-card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 16px;
+    }
+    .appt-card-label {
+        font-size: 11px;
+        color: var(--dash-text-muted);
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+    .appt-card-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--dash-text);
+    }
+    .appt-card-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .appt-card-actions .action-btn {
+        width: 100%;
+        min-height: 44px;
+        font-size: 14px;
+    }
 
     .pet-avatar {
         width: 32px; height: 32px;
@@ -465,31 +514,44 @@
         .action-btn { font-size: 10px; padding: 5px 8px; }
     }
 
-    /* ===== RESPONSIVE: MOBILE (max 600px) ===== */
-    @media (max-width: 600px) {
-        .dash-container { margin-top: 80px !important; padding: 0 10px !important; }
-        .dash-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-        .dash-title { font-size: 22px; }
-        .stats-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
-        .stat-card { padding: 14px; }
-        .stat-icon { font-size: 22px; }
-        .stat-label { font-size: 12px; text-align: center; }
-        .stat-value { font-size: 20px; text-align: center; }
-        .cal-controls { flex-direction: row; justify-content: space-between; align-items: center; gap: 8px; }
-        .cal-controls .cal-btn { padding: 6px 10px; font-size: 12px; }
-        .cal-month-title { font-size: 16px !important; }
-        .calendar-container { padding: 12px; border-radius: 12px; }
-        .month-grid { gap: 3px; }
-        .day-cell { min-height: 60px; padding: 3px; border-radius: 8px; }
-        .day-num { font-size: 10px; }
-        .event-strip { font-size: 8px; padding: 2px 3px; }
-        .section-card { padding: 16px; }
-        .section-header { flex-direction: column; gap: 10px; align-items: flex-start; }
-        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .dash-table { min-width: 600px; }
-        .modal-box { max-width: 98% !important; padding: 20px 14px !important; border-radius: 16px !important; }
+    /* ===== RESPONSIVE: MOBILE (max 768px) ===== */
+    @media (max-width: 768px) {
+        .dash-container { margin-top: 80px !important; padding: 0 12px !important; }
+        .dash-header { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
+        .dash-title { font-size: 24px; }
+        .stats-grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; margin-bottom: 24px; }
+        .stat-card { padding: 14px; align-items: center; text-align: center; }
+        .stat-icon { font-size: 24px; margin-bottom: 4px; }
+        .stat-label { font-size: 11px; }
+        .stat-value { font-size: 22px; }
+        
+        .cal-controls { padding: 8px; gap: 8px; }
+        .cal-controls .cal-btn { padding: 6px 12px; font-size: 12px; flex: 1; text-align: center; }
+        .cal-month-title { font-size: 15px !important; }
+        .calendar-container { padding: 12px; border-radius: 16px; margin-bottom: 30px; }
+        
+        .weekday-label { font-size: 10px; padding: 5px 0; }
+        .day-cell { min-height: 50px; border-radius: 8px; }
+        .day-num { font-size: 11px; margin-bottom: 2px; }
+        .event-strip { height: 6px; padding: 0; min-height: 6px; }
+        .event-strip span { display: none; }
+        .strip-more { font-size: 8px; }
+
+        .section-header { flex-direction: row; align-items: center; justify-content: space-between; margin-top: 30px; }
+        .section-title { font-size: 18px; }
+        
+        .table-container { display: none; }
+        .appt-card-mobile { display: flex; }
     }
 
+    /* Small Phone adjustments */
+    @media (max-width: 340px) {
+        .dash-title { font-size: 20px; }
+        .stat-value { font-size: 18px; }
+        .weekday-label { font-size: 9px; }
+    }
+
+    /* ===== RESPONSIVE: SMALL PHONE (max 400px) ===== */
     /* ===== RESPONSIVE: SMALL PHONE (max 400px) ===== */
     @media (max-width: 400px) {
         .stats-grid { grid-template-columns: 1fr 1fr !important; }
@@ -497,6 +559,17 @@
         .stat-icon { font-size: 20px; margin-bottom: 0; }
         .stat-value { font-size: 18px; }
         .cal-controls { flex-direction: column; align-items: stretch; }
+    }
+
+    .appt-card-actions-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    @media (max-width: 480px) {
+        .appt-card-actions-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -557,10 +630,10 @@
         </div>
 
         <div class="calendar-container">
-            <div class="cal-controls" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <button class="cal-btn" onclick="navMonth(-1)" style="padding: 8px 16px;">← Previous</button>
-                <h3 id="calendarMonthLabel" class="cal-month-title" style="margin:0; font-size:18px;">...</h3>
-                <button class="cal-btn" onclick="navMonth(1)" style="padding: 8px 16px;">Next →</button>
+            <div class="cal-controls">
+                <button class="cal-btn" onclick="navMonth(-1)">← Prev</button>
+                <h3 id="calendarMonthLabel" class="cal-month-title">...</h3>
+                <button class="cal-btn" onclick="navMonth(1)">Next →</button>
             </div>
 
             <div class="month-grid" id="monthGrid">
@@ -662,6 +735,75 @@
             </table>
         </div>
 
+        <!-- MOBILE APPOINTMENT CARDS -->
+        <div class="appt-card-mobile">
+            {% for b in bookings[:12] %}
+            <div class="appt-card">
+                <div class="appt-card-header">
+                    <div>
+                        <div class="appt-card-value" style="font-size:16px;">{{ b.date.strftime('%b %d') }} at {{ b.slot }}</div>
+                        <span class="status-pill {% if b.status == 'confirmed' %}status-confirmed{% elif b.status == 'cancelled' %}status-cancelled{% else %}status-pending{% endif %}">
+                            {{ b.status | title }}
+                        </span>
+                    </div>
+                    <div style="font-size:24px;">
+                        {% if b.pet_type.lower() == 'cat' %}🐱
+                        {% elif b.pet_type.lower() == 'dog' %}🐶
+                        {% else %}🐾{% endif %}
+                    </div>
+                </div>
+                <div class="appt-card-body">
+                    <div style="display:flex; justify-content:space-between;">
+                        <div>
+                            <div class="appt-card-label">Patient</div>
+                            <div class="appt-card-value">{{ b.pet_name or 'N/A' }}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="appt-card-label">Client</div>
+                            <div class="appt-card-value">{{ b.name }}</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="appt-card-label">Service</div>
+                        <div class="appt-card-value">{{ b.service_ref.name }}</div>
+                    </div>
+                </div>
+                <div class="appt-card-actions">
+                    <div class="appt-card-actions-grid">
+                        {# PENDING ACTIONS #}
+                        {% if b.status == 'pending' %}
+                        <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                            <input type="hidden" name="status" value="confirmed">
+                            <button type="submit" class="action-btn action-accept">✓ Accept</button>
+                        </form>
+                        {% endif %}
+                        
+                        {# CONFIRMED ACTIONS #}
+                        {% if b.status == 'confirmed' %}
+                        <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                            <input type="hidden" name="status" value="completed">
+                            <button type="submit" class="action-btn action-finish">🏁 Finish</button>
+                        </form>
+                        {% endif %}
+
+                        {# CANCEL ACTION #}
+                        {% if b.status == 'pending' or b.status == 'confirmed' %}
+                        <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                            <input type="hidden" name="status" value="cancelled">
+                            <button type="submit" class="action-btn action-cancel">✕ Cancel</button>
+                        </form>
+                        {% endif %}
+                        
+                        {# DELETE ACTION #}
+                        <form action="{{ url_for('staff.delete_booking', bid=b.id) }}" method="POST" onsubmit="return confirm('Immediately remove this appointment from history?')">
+                            <button type="submit" class="action-btn action-delete">🗑️ Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
         <!-- Control Panel components have been migrated to staff_control_panel.html -->
 
     </div>
@@ -716,13 +858,13 @@
 
         // Keep the labels
         const labelsHTML = `
-            <div class="weekday-label">Mon</div>
-            <div class="weekday-label">Tue</div>
-            <div class="weekday-label">Wed</div>
-            <div class="weekday-label">Thu</div>
-            <div class="weekday-label">Fri</div>
-            <div class="weekday-label">Sat</div>
-            <div class="weekday-label">Sun</div>
+            <div class="weekday-label">${window.innerWidth < 600 ? 'M' : 'Mon'}</div>
+            <div class="weekday-label">${window.innerWidth < 600 ? 'T' : 'Tue'}</div>
+            <div class="weekday-label">${window.innerWidth < 600 ? 'W' : 'Wed'}</div>
+            <div class="weekday-label">${window.innerWidth < 600 ? 'T' : 'Thu'}</div>
+            <div class="weekday-label">${window.innerWidth < 600 ? 'F' : 'Fri'}</div>
+            <div class="weekday-label">${window.innerWidth < 600 ? 'S' : 'Sat'}</div>
+            <div class="weekday-label">${window.innerWidth < 600 ? 'S' : 'Sun'}</div>
         `;
         grid.innerHTML = labelsHTML;
         

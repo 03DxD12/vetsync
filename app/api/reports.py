@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from datetime import datetime
 from app.extensions import db
 from app.models.report import Report
 from app.models.user import User
@@ -14,15 +15,23 @@ def reports(current_user_jwt):
         if current_user_jwt.role == 'admin':
             items = Report.query.order_by(Report.created_at.desc()).all()
         else:
-            items = Report.query.filter_by(user_id=current_user_jwt.id).order_by(Report.created_at.desc()).all()
+            items = Report.query.filter_by(user_id=current_user_jwt.id, is_deleted=False).order_by(Report.created_at.desc()).all()
+
 
         return jsonify([{
             'id': r.id, 'title': r.title, 'category': r.category,
             'description': r.description, 'status': r.status,
-            'admin_comment': r.admin_comment, 'user_id': r.user_id,
+            'admin_comment': r.admin_comment, 
+            'admin_review_status': r.admin_review_status,
+            'reviewed_by': r.reviewed_by,
+            'reviewed_at': r.reviewed_at.strftime('%b %d, %Y %H:%M') if r.reviewed_at else None,
+            'user_id': r.user_id,
             'staff_name': _staff_name(r.user_id),
-            'created_at': r.created_at.strftime('%b %d, %Y')
+            'created_at': r.created_at.strftime('%b %d, %Y'),
+            'is_deleted': r.is_deleted,
+            'edit_history': r.edit_history
         } for r in items]), 200
+
 
     data = request.get_json()
     if not data.get('title') or not data.get('description'):
@@ -52,12 +61,52 @@ def report_detail(current_user_jwt, report_id):
             report.status = data['status']
         if 'admin_comment' in data:
             report.admin_comment = data['admin_comment']
+        if 'title' in data or 'description' in data:
+            # store previous version in history array
+            history_entry = {
+                "title": report.title,
+                "content": report.description,
+                "edited_at": datetime.utcnow().isoformat(),
+                "edited_by": "admin"
+            }
+            hist = list(report.edit_history) if report.edit_history else []
+            hist.append(history_entry)
+            report.edit_history = hist
+            
+            if 'title' in data:
+                report.title = data['title']
+            if 'description' in data:
+                report.description = data['description']
+
         db.session.commit()
         return jsonify({'message': 'Report updated successfully'})
 
-    db.session.delete(report)
+    # Soft Delete
+    report.is_deleted = True
+    report.deleted_by = current_user_jwt.id
+    report.deleted_at = datetime.utcnow()
     db.session.commit()
-    return jsonify({'message': 'Report deleted successfully'})
+    return jsonify({'message': 'Report deleted successfully (Soft Delete)'})
+
+
+
+@api_reports_bp.route('/<int:report_id>/review', methods=['PUT'])
+@role_required(['admin'])
+def review_report(current_user_jwt, report_id):
+    data = request.get_json()
+    report = db.session.get(Report, report_id)
+    if not report:
+        return jsonify({'error': 'Report not found'}), 404
+
+    report.admin_comment = data.get("comment")
+    report.admin_review_status = data.get("status", "reviewed")
+    # Also update main status for legacy UI compatibility
+    report.status = data.get("status", "reviewed").title()
+    report.reviewed_by = current_user_jwt.id
+    report.reviewed_at = datetime.utcnow()
+
+    db.session.commit()
+    return jsonify({"message": "Report reviewed successfully"})
 
 
 def _staff_name(user_id):

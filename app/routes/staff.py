@@ -1,3 +1,4 @@
+import base64
 import json
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
@@ -10,6 +11,54 @@ from app.middleware.decorators import login_required, admin_required, staff_requ
 from app.services.push_service import send_push_notification
 
 staff_bp = Blueprint('staff', __name__, url_prefix='/staff')
+
+
+def _pet_key(booking):
+    pet_name = (booking.pet_name or '').strip()
+    email = (booking.email or '').strip().lower()
+    return f"{pet_name}|{email}"
+
+
+def _encode_pet_id(raw_key):
+    return base64.urlsafe_b64encode(raw_key.encode('utf-8')).decode('ascii')
+
+
+def _decode_pet_id(pet_id):
+    return base64.urlsafe_b64decode(pet_id.encode('ascii')).decode('utf-8')
+
+
+def _serialize_pet_record(record):
+    return {
+        'booking_id': record.id,
+        'date': record.date.isoformat(),
+        'service': record.service_ref.name if record.service_ref else 'Unknown service',
+        'reason': record.visit_reason,
+        'status': record.status,
+        'notes': record.notes,
+        'medical_history': record.medical_history,
+        'handled_by': record.handled_by,
+        'created_at': record.created_at.isoformat() if record.created_at else None,
+    }
+
+
+def _build_pet_directory(bookings):
+    grouped = {}
+    for booking in bookings:
+        if not booking.pet_name or not booking.email:
+            continue
+        raw_key = _pet_key(booking)
+        if raw_key not in grouped:
+            grouped[raw_key] = {
+                'pet_id': _encode_pet_id(raw_key),
+                'name': booking.pet_name,
+                'type': booking.pet_type,
+                'breed': booking.pet_breed,
+                'owner': booking.name,
+                'email': booking.email,
+                'latest_visit': booking.date.isoformat(),
+            }
+
+    return sorted(grouped.values(), key=lambda item: ((item['name'] or '').lower(), (item['owner'] or '').lower()))
 
 
 @staff_bp.route('/appointments')
@@ -26,9 +75,45 @@ def appointments():
 @staff_required
 def submitted_reports():
     user = _get_current_user()
-    # View all submitted reports for validation/audit
-    reports = Report.query.order_by(Report.created_at.desc()).all()
+    if user.role == 'admin':
+        reports = Report.query.order_by(Report.created_at.desc()).all()
+    else:
+        # Staff view rule: Only active reports
+        reports = Report.query.filter_by(user_id=user.id, is_deleted=False).order_by(Report.created_at.desc()).all()
     return render_template('staff_submitted_reports.html', user=user, reports=reports)
+
+
+@staff_bp.route("/reports/edit/<int:id>", methods=["POST"])
+@login_required
+@staff_required
+def edit_report(id):
+    user = _get_current_user()
+    report = Report.query.get_or_404(id)
+
+    if report.user_id != user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    # store previous version in history array
+    history_entry = {
+        "title": report.title,
+        "content": report.description,
+        "edited_at": datetime.utcnow().isoformat()
+    }
+
+    if not report.edit_history:
+        report.edit_history = []
+    
+    # SQLAlchemy requires explicit assignment for JSON fields to detect mutation
+    hist = list(report.edit_history)
+    hist.append(history_entry)
+    report.edit_history = hist
+
+    report.title = request.form.get("title") or request.json.get("title")
+    report.description = request.form.get("content") or request.json.get("content")
+
+    db.session.commit()
+    return redirect(url_for('staff.submitted_reports'))
+
 
 
 @staff_bp.route('/offers')
@@ -66,20 +151,42 @@ def control_panel():
 @staff_required
 def pet_records():
     user = _get_current_user()
-    all_bookings = Booking.query.all()
-    pet_history = {}
-    for b in all_bookings:
-        key = f"{b.pet_name}|{b.email}"
-        if key not in pet_history:
-            pet_history[key] = {
-                'name': b.pet_name, 'type': b.pet_type, 'breed': b.pet_breed,
-                'owner': b.name, 'email': b.email, 'records': []
-            }
-        pet_history[key]['records'].append({
-            'date': b.date.isoformat(), 'service': b.service_ref.name,
-            'reason': b.visit_reason, 'status': b.status, 'notes': b.notes
-        })
-    return render_template('staff_pet_records.html', user=user, pet_history=pet_history)
+    bookings = Booking.query.order_by(Booking.pet_name.asc(), Booking.date.desc()).all()
+    pets = _build_pet_directory(bookings)
+    return render_template('staff_pet_records.html', user=user, pets=pets)
+
+
+@staff_bp.route('/pet-records/<pet_id>/history')
+@login_required
+@staff_required
+def pet_history_detail(pet_id):
+    try:
+        raw_key = _decode_pet_id(pet_id)
+    except Exception:
+        return jsonify({'error': 'Invalid patient identifier.'}), 400
+
+    pet_name, email = (raw_key.split('|', 1) + [''])[:2]
+    if not pet_name or not email:
+        return jsonify({'error': 'Invalid patient identifier.'}), 400
+
+    records = (Booking.query
+               .filter(Booking.pet_name == pet_name, Booking.email == email)
+               .order_by(Booking.date.desc(), Booking.created_at.desc())
+               .all())
+
+    if not records:
+        return jsonify({'error': 'Patient not found.'}), 404
+
+    current = records[0]
+    return jsonify({
+        'pet_id': pet_id,
+        'name': current.pet_name,
+        'type': current.pet_type,
+        'breed': current.pet_breed,
+        'owner': current.name,
+        'email': current.email,
+        'history': [_serialize_pet_record(record) for record in records],
+    })
 
 
 @staff_bp.route('/audit-logs')
@@ -129,15 +236,18 @@ def delete_booking(bid):
     if not booking:
         flash('Booking not found.', 'error')
     else:
+        booking.status = 'cancelled'
+        user = _get_current_user()
+        if user:
+            booking.handled_by = f"{user.first_name} {user.last_name}"
         if booking.user_id:
             send_push_notification(
                 booking.user_id,
                 "Booking Cancelled",
                 f"Your booking for {booking.pet_name} on {booking.date} has been cancelled by staff."
             )
-        db.session.delete(booking)
         db.session.commit()
-        flash(f'Booking #{bid} has been removed.', 'success')
+        flash(f'Booking #{bid} has been marked as cancelled.', 'success')
 
     return redirect(request.referrer or url_for('dashboard.staff_dashboard'))
 

@@ -39,7 +39,7 @@ class Booking(db.Model):
     consent         = db.Column(db.Boolean, default=False)
 
     # Meta
-    status          = db.Column(db.String(20),  default='confirmed')
+    status          = db.Column(db.String(20),  default='pending')
     user_id         = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     handled_by      = db.Column(db.String(100), nullable=True)
     created_at      = db.Column(db.DateTime,    default=datetime.utcnow)

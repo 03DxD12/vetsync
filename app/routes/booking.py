@@ -77,8 +77,8 @@ def book():
 
     new_booking = create_booking(data, user.id)
     flash(
-        f'🎉 Booking confirmed! {service.name} for {g("pet_name") or "your pet"} '
-        f'on {booking_date.strftime("%B %d, %Y")} at {slot}.',
+        f'Booking submitted. {service.name} for {g("pet_name") or "your pet"} '
+        f'on {booking_date.strftime("%B %d, %Y")} at {slot} is now pending staff confirmation.',
         'success'
     )
     return redirect(url_for('dashboard.client_dashboard'))
@@ -91,6 +91,10 @@ def cancel_booking(bid):
     booking = db.session.get(Booking, bid)
     if not booking or booking.user_id != user.id:
         flash('Unauthorized.', 'error')
+        return redirect(url_for('dashboard.client_dashboard'))
+
+    if booking.status != 'pending':
+        flash('This booking can no longer be cancelled because staff already accepted it.', 'error')
         return redirect(url_for('dashboard.client_dashboard'))
 
     booking.status = 'cancelled'

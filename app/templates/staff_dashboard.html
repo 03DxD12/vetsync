@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_staff.html" %}
 {% block title %}Veterinarian Dashboard - VetSync{% endblock %}
 
 {% block content %}
@@ -724,9 +724,9 @@
                             </form>
                             {% endif %}
                             
-                            {# DELETE ACTION (Always available) #}
-                            <form action="{{ url_for('staff.delete_booking', bid=b.id) }}" method="POST" onsubmit="return confirm('Immediately remove this appointment from history? This cannot be undone.')">
-                                <button type="submit" class="action-btn" style="background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; padding: 6px 8px;" title="Permanent Delete">🗑️</button>
+                            {# CANCEL ACTION (Always available) #}
+                            <form action="{{ url_for('staff.delete_booking', bid=b.id) }}" method="POST" onsubmit="return confirm('Mark this appointment as cancelled?')">
+                                <button type="submit" class="action-btn" style="background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; padding: 6px 8px;" title="Cancel Appointment">🗑️</button>
                             </form>
                         </td>
                     </tr>
@@ -794,9 +794,9 @@
                         </form>
                         {% endif %}
                         
-                        {# DELETE ACTION #}
-                        <form action="{{ url_for('staff.delete_booking', bid=b.id) }}" method="POST" onsubmit="return confirm('Immediately remove this appointment from history?')">
-                            <button type="submit" class="action-btn action-delete">🗑️ Delete</button>
+                        {# CANCEL ACTION #}
+                        <form action="{{ url_for('staff.delete_booking', bid=b.id) }}" method="POST" onsubmit="return confirm('Mark this appointment as cancelled?')">
+                            <button type="submit" class="action-btn action-delete">🗑️ Cancel</button>
                         </form>
                     </div>
                 </div>
@@ -959,8 +959,8 @@
                                 <button class="action-btn" style="background:#FFF7ED; color:#C2410C; border:1px solid #FFEDD5;" onclick="updateApptStatus(${a.id}, 'cancelled', '${dateStr}')">✕ Cancel</button>
                             ` : ''}
 
-                            // DELETE (Always)
-                            <button class="action-btn" style="background:#FEF2F2; color:#B91C1C; border:1px solid #FECACA; padding: 6px 12px;" onclick="deleteApptFromCalendar(${a.id}, '${dateStr}')" title="Delete Permanent">🗑️</button>
+                            // CANCEL (Always)
+                            <button class="action-btn" style="background:#FEF2F2; color:#B91C1C; border:1px solid #FECACA; padding: 6px 12px;" onclick="deleteApptFromCalendar(${a.id}, '${dateStr}')" title="Cancel Appointment">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -997,14 +997,13 @@
     }
 
     async function deleteApptFromCalendar(id, currentDateStr) {
-        if(!confirm("Are you sure you want to permanently delete this appointment?")) return;
+        if(!confirm("Mark this appointment as cancelled?")) return;
         
         try {
             const res = await fetch(`/staff/booking/${id}/delete`, { method: 'POST' });
             if(res.ok) {
-                // Remove from local data
-                const idx = rawBookings.findIndex(b => b.id === id);
-                if(idx > -1) rawBookings.splice(idx, 1);
+                const app = rawBookings.find(b => b.id === id);
+                if(app) app.status = 'cancelled';
                 
                 renderCalendar();
                 openDayDetail(currentDateStr);

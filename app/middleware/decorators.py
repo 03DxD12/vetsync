@@ -35,7 +35,7 @@ def staff_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         user = _get_current_user()
-        if not user or user.role not in ['admin', 'staff']:
+        if not user or user.role != 'staff':
             flash('Access denied: Staff only.', 'error')
             return redirect(url_for('main.index'))
         return f(*args, **kwargs)

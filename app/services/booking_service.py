@@ -8,7 +8,10 @@ PET_TYPES = ["Dog", "Cat", "Bird", "Rabbit", "Reptile", "Fish", "Other"]
 
 def booked_slots_on(q_date: date_type) -> set:
     """Returns set of already-booked slot strings for a given date."""
-    taken = Booking.query.filter_by(date=q_date, status='confirmed').all()
+    taken = Booking.query.filter(
+        Booking.date == q_date,
+        Booking.status.in_(['pending', 'confirmed'])
+    ).all()
     return {b.slot for b in taken}
 
 
@@ -47,7 +50,7 @@ def create_booking(data: dict, user_id: int) -> Booking:
         notes           = data.get('notes'),
         payment_method  = data.get('payment_method'),
         consent         = data.get('consent', False),
-        status          = 'confirmed',
+        status          = 'pending',
         user_id         = user_id,
     )
     db.session.add(booking)

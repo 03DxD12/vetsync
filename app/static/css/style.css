@@ -52,34 +52,38 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 /* ===================== NAVBAR ===================== */
 .navbar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 1100;
-    background: rgba(26, 60, 143, 0.96);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; z-index: 1100 !important;
+    background: rgba(26, 60, 143, 0.96) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
     transition: var(--transition);
+    height: 64px !important;
+    display: flex !important;
+    align-items: center !important;
 }
-.navbar.scrolled { box-shadow: var(--shadow-lg); }
+.navbar.scrolled { box-shadow: var(--shadow-lg) !important; background: rgba(18, 43, 102, 0.98) !important; }
 .nav-container {
     max-width: 1280px; margin: 0 auto;
     display: flex; align-items: center; gap: 2rem;
     padding: 0 2rem; height: 64px;
 }
 .nav-logo {
-    display: flex; align-items: center; gap: 0.5rem;
-    font-family: var(--font-head); font-weight: 900; font-size: 1.4rem;
-    color: var(--white);
+    display: flex !important; align-items: center !important; gap: 0.5rem !important;
+    font-family: var(--font-head) !important; font-weight: 900 !important; font-size: 1.4rem !important;
+    color: var(--white) !important;
 }
 .logo-icon { font-size: 1.6rem; }
 .nav-links {
     display: flex; gap: 0.25rem; margin-left: auto; margin-right: auto; flex: 1 1 auto; justify-content: center;
 }
 .nav-links a {
-    color: rgba(255,255,255,0.8); font-weight: 500; font-size: 0.85rem;
-    padding: 0.4rem 0.6rem; border-radius: 8px; transition: var(--transition);
-    white-space: nowrap;
+    color: rgba(255,255,255,0.85) !important; font-weight: 600 !important; font-size: 0.88rem !important;
+    padding: 0.5rem 0.8rem !important; border-radius: 8px !important; transition: var(--transition) !important;
+    white-space: nowrap !important;
 }
 .nav-links a:hover, .nav-links a.active {
-    color: var(--white); background: rgba(255,255,255,0.15);
+    color: var(--white) !important; background: rgba(255,255,255,0.15) !important;
 }
 .nav-mobile-auth { display: none; } /* Hidden on desktop */
 .nav-auth { display: flex; align-items: center; gap: 1.2rem; flex-shrink: 0; margin-left: auto; }
@@ -97,6 +101,59 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     font-size: 0.85rem; font-weight: 700; transition: var(--transition);
 }
 .btn-nav-fill:hover { background: #00b09c; transform: translateY(-1px); }
+
+/* ===== DASHBOARD NAV LINK ===== */
+.nav-dashboard-link {
+    color: var(--teal) !important;
+    font-weight: 700 !important;
+    background: rgba(0, 201, 177, 0.12) !important;
+    border: 1px solid rgba(0, 201, 177, 0.3);
+    padding: 0.4rem 0.8rem !important;
+    border-radius: 8px;
+}
+.nav-dashboard-link:hover,
+.nav-dashboard-link.active {
+    background: rgba(0, 201, 177, 0.25) !important;
+    color: var(--white) !important;
+}
+
+/* ===== USER AREA + LOGOUT (Matches Staff/Admin Style) ===== */
+.nav-user-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-user-name {
+    color: rgba(255, 255, 255, 0.92);
+    font-weight: 600;
+    font-size: 0.88rem;
+    white-space: nowrap;
+}
+
+.btn-nav-logout {
+    background: #dc2626;
+    color: #ffffff;
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.83rem;
+    text-decoration: none;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    border: none;
+}
+.btn-nav-logout:hover {
+    background: #b91c1c;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+}
+
+
 .nav-profile-menu {
     display: flex;
     align-items: center;
@@ -184,7 +241,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     position: relative; min-height: 100vh;
     background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue-mid) 50%, #1a7bc9 100%);
     display: flex; align-items: center;
-    overflow: hidden; padding-top: 64px;
+    overflow: hidden; padding-top: 0;
 }
 .hero-bg-pattern {
     position: absolute; inset: 0; opacity: 0.07;
@@ -205,13 +262,21 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .hero-title span { color: var(--cyan); }
 .hero-desc { color: rgba(255,255,255,0.75); font-size: 1rem; line-height: 1.7; margin-bottom: 1.25rem; max-width: 480px; }
 .hero-btns { 
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+        "book services"
+        "about vetscan";
     gap: 1rem;
     justify-content: flex-start;
+    max-width: 420px;
 }
+.hero-action-book { grid-area: book; }
+.hero-action-services { grid-area: services; }
+.hero-action-about { grid-area: about; }
+.hero-action-vetscan { grid-area: vetscan; }
 .hero-btns a {
-    min-width: 160px;
+    min-width: 0;
     text-align: center;
     justify-content: center;
     min-height: 48px;
@@ -232,7 +297,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     #heroVisual { grid-column: 1; order: -1; }
 }
 @media (max-width: 540px) {
-    .hero-btns { flex-direction: column; align-items: stretch; width: 100%; }
+    .hero-btns {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "book"
+            "about"
+            "services"
+            "vetscan";
+        width: 100%;
+    }
     .hero-btns a { width: 100%; }
     .hero-title { font-size: 2.2rem; }
 }
@@ -520,7 +593,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* ===================== AUTH PAGES ===================== */
 .auth-section {
     min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr;
-    padding-top: 64px;
+    padding-top: 0;
 }
 .auth-bg {
     background: linear-gradient(135deg, var(--blue-dark), var(--blue-bright));
@@ -823,11 +896,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     }
     #heroActionButtons {
         order: 3 !important;
+    }
     .hero-btns { 
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+            "book services"
+            "about vetscan";
         width: 100%;
-        max-width: 420px;
+        max-width: 520px;
         margin: 0 auto;
         gap: 0.8rem;
     }
@@ -1339,4 +1416,192 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     .progress-line { display: none; }
     .progress-step span { display: block !important; font-size: 0.9rem !important; }
     .progress-step .step-circle { width: 44px; height: 44px; font-size: 1.1rem; }
+}
+
+/* ===================== CLEAN CLINICAL DASHBOARD (CENTERED) ===================== */
+.dashboard-page {
+    display: flex;
+    justify-content: center;
+    background: #f5f7fb;
+    min-height: 100vh;
+    padding: 100px 20px 40px; /* Offset for fixed navbar */
+}
+
+.dashboard-container {
+    width: 100%;
+    max-width: 1100px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* CARDS */
+.card {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.welcome-card-final h2 {
+    color: #1a3c8f;
+    margin-bottom: 20px;
+    font-size: 1.6rem;
+    font-family: var(--font-head);
+}
+
+.profile-final {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.avatar-final {
+    width: 64px;
+    height: 64px;
+    background: #00c9b1;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.actions-final {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* NAVBAR USER AREA (CLEAN) */
+.user-area {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 5px 15px;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-username {
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.btn-logout-new {
+    background: #ff4d4d;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.btn-logout-new:hover {
+    background: #e63939;
+    color: white !important;
+    transform: translateY(-1px);
+}
+
+/* TABLE STYLES (PROFESSIONAL) */
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    min-width: 700px;
+}
+
+.styled-table thead {
+    background: #1a3c8f;
+    color: white;
+}
+
+.styled-table th {
+    padding: 16px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+.styled-table td {
+    padding: 16px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.95rem;
+    color: #2d3748;
+}
+
+.styled-table tbody tr:hover {
+    background: #f0f8ff;
+}
+
+.status-pill {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.status-confirmed { background: #d1fae5; color: #065f46; }
+.status-pending { background: #fef3c7; color: #92400e; }
+.status-cancelled { background: #fee2e2; color: #991b1b; }
+
+.btn-danger {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.btn-danger:hover {
+    background: #e63939;
+}
+
+/* RESPONSIVE FIXES */
+@media (max-width: 768px) {
+    .navbar {
+        height: auto;
+        padding: 0.5rem 1rem;
+    }
+
+    .nav-links {
+        margin: 10px 0;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .user-area {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .dashboard-page {
+        padding-top: 140px; /* Extra offset for taller mobile nav */
+    }
+
+    .profile-final {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .styled-table {
+        font-size: 13px;
+    }
 }

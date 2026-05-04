@@ -1,7 +1,29 @@
-{% extends "base.html" %}
+{% extends "base_public.html" %}
 {% block title %}VetSync Clinic - Home{% endblock %}
 
 {% block content %}
+<style>
+    .btn-book-big {
+        display: inline-block;
+        background-color: #1fa6dc;
+        color: white;
+        padding: 14px 28px;
+        font-size: 1.15rem;
+        font-weight: 800;
+        border-radius: 12px;
+        text-decoration: none;
+        box-shadow: 0 4px 15px rgba(31, 166, 220, 0.4);
+        transition: all 0.3s ease;
+        margin-top: 15px;
+        letter-spacing: 0.5px;
+    }
+    .btn-book-big:hover {
+        background-color: #158bb9;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(31, 166, 220, 0.6);
+        color: white;
+    }
+</style>
 
 <!-- HERO SECTION -->
 <section class="hero">
@@ -14,10 +36,10 @@
             </div>
             
             <div class="hero-btns" id="heroActionButtons">
-                <a href="#book" class="btn-primary">Book Now</a>
-                <a href="{{ url_for('main.services_page') }}" class="btn-secondary">Our Services</a>
-                <a href="{{ url_for('vetscan.vetscan') }}" class="btn-secondary">Vet Scan</a>
-                <a href="{{ url_for('main.about') }}" class="btn-secondary">Know More</a>
+                <a href="#book" class="btn-primary hero-action-book">Book Now</a>
+                <a href="{{ url_for('main.services_page') }}" class="btn-secondary hero-action-services">Our Services</a>
+                <a href="{{ url_for('main.about') }}" class="btn-secondary hero-action-about">Know More</a>
+                <a href="{{ url_for('vetscan.vetscan') }}" class="btn-secondary hero-action-vetscan">Vet Scan</a>
             </div>
         </div>
 

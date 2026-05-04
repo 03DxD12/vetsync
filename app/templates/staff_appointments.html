@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_staff.html" %}
 {% block title %}Appointment Registry - VetSync{% endblock %}
 
 {% block content %}
@@ -280,9 +280,9 @@
                                 </form>
                                 {% endif %}
     
-                                {# DELETE (Always) #}
-                                <form action="{{ url_for('staff.delete_booking', bid=b.id) }}" method="POST" onsubmit="return confirm('Immediately remove this appointment from history?')">
-                                    <button type="submit" class="btn-action btn-delete" title="Permanent Delete" style="font-size:18px;">🗑️</button>
+                                {# CANCEL (Always) #}
+                                <form action="{{ url_for('staff.delete_booking', bid=b.id) }}" method="POST" onsubmit="return confirm('Mark this appointment as cancelled?')">
+                                    <button type="submit" class="btn-action btn-delete" title="Cancel Appointment" style="font-size:18px;">🗑️</button>
                                 </form>
                             </div>
                             {% endif %}
@@ -352,9 +352,9 @@
                 </form>
                 {% endif %}
 
-                {# DELETE #}
-                <form action="{{ url_for('staff.delete_booking', bid=b.id) }}" method="POST" onsubmit="return confirm('Immediately remove this appointment from history?')">
-                    <button type="submit" class="btn-action btn-delete">🗑️ Permanent Delete</button>
+                {# CANCEL #}
+                <form action="{{ url_for('staff.delete_booking', bid=b.id) }}" method="POST" onsubmit="return confirm('Mark this appointment as cancelled?')">
+                    <button type="submit" class="btn-action btn-delete">🗑️ Cancel Appointment</button>
                 </form>
             </div>
             {% else %}

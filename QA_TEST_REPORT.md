@@ -15,6 +15,292 @@ Validated modules:
 - Shared shell: navbar, hamburger menu, footer, service worker, manifest, static assets
 - Security: RBAC, session protection, SQL injection rejection, login/signup attack payloads, brute-force throttling, password/OTP hashing, HTTPS/HSTS enforcement mode, security headers
 
+## System Documentation With Code Location Mapping
+
+Target industry: Veterinary Healthcare Services
+
+This section maps the VetSync defense documentation to the actual implementation folders, blueprints, classes, functions, templates, and static assets in this repository.
+
+### 1. Executive Summary And Problem Definition
+
+The problem addressed by VetSync is fragmented veterinary clinic operations: appointment scheduling, patient medical records, account recovery, client communication, and staff workflows can become inconsistent when handled through separate tools. VetSync centralizes these workflows into one Flask application so the web dashboard and mobile PWA share the same backend, database models, and API layer.
+
+Implementation locations:
+
+| Area | Where it is implemented |
+| --- | --- |
+| Flask application factory | `app/__init__.py`, function `create_app()` |
+| Central extension setup | `app/extensions.py` |
+| Web route registration | `app/routes/__init__.py`, function `register_blueprints()` |
+| API gateway registration | `app/api/__init__.py`, blueprint `api_v1` with prefix `/api/v1` |
+| Database models | `app/models/` |
+| Homepage | `app/templates/index.html`, served by `app/routes/main.py`, function `index()` at `/` |
+| Shared page shell | `app/templates/base.html` |
+| PWA shell | `app/static/manifest.json` and `app/static/service-worker.js` |
+
+### 2. System Integration And Architecture
+
+VetSync uses a modular RESTful Flask architecture. Each business area is separated into a Blueprint, but all Blueprints are registered into the same Flask app and use the same SQLAlchemy database session.
+
+Blueprint and module map:
+
+| Blueprint / Module | File | Main responsibility |
+| --- | --- | --- |
+| `main_bp` | `app/routes/main.py` | Public pages, homepage, services, contact, offline page, service worker, favicon |
+| `auth_bp` | `app/routes/auth.py` | Web login, signup, forgot password, logout |
+| `dashboard_bp` | `app/routes/dashboard.py` | Role-based dashboard routing for client, staff, and admin |
+| `booking_bp` | `app/routes/booking.py` | Web booking page and form-based booking actions |
+| `staff_bp` | `app/routes/staff.py` | Staff appointments, pet records, reports, control panel, schedule actions |
+| `vetscan_bp` | `app/routes/vetscan.py` | VetScan page, prediction endpoint, breed lookup |
+| `api_v1` | `app/api/__init__.py` | Parent API gateway for `/api/v1/*` endpoints |
+| `api_auth_bp` | `app/api/auth.py` | API login, OTP, password reset |
+| `api_appointments_bp` | `app/api/appointments.py` | Appointment API create/read/update/delete |
+| `api_availability_bp` | `app/api/availability.py` | Staff schedule and slot blocking API |
+| `api_chatbot_bp` | `app/api/chatbot.py` | ASTRID chatbot and medical redirect behavior |
+| `api_users_bp` | `app/api/users.py` | Admin/user API operations |
+| `api_reports_bp` | `app/api/reports.py` | Staff/admin report API operations |
+| `api_notifications_bp` | `app/api/notifications.py` | Notifications API |
+| `api_push_bp` | `app/api/push.py` | PWA push notification API |
+
+One-system logic:
+
+- The web dashboard and mobile PWA are not separate systems. They are separate interfaces served by the same Flask application.
+- Both interfaces use the same SQLAlchemy models in `app/models/`.
+- API requests are routed through the same parent gateway in `app/api/__init__.py`.
+- Shared authentication and security behavior is implemented in `app/middleware/` and `app/services/`.
+- The mobile/PWA layer has no separate database. Its configuration is in `app/static/manifest.json`, its offline/runtime shell is in `app/static/service-worker.js`, and its pages are still served by Flask templates in `app/templates/`.
+
+Architecture diagram explanation mapped to code:
+
+| Architecture layer | Repository location | Defense explanation |
+| --- | --- | --- |
+| Presentation layer | `app/templates/*.html`, `app/static/css/`, `app/static/js/` | Jinja2 templates and JavaScript render the web and PWA interfaces. These are thin clients because they call Flask routes/APIs instead of owning clinical data. |
+| Application layer | `app/routes/`, `app/api/`, `app/services/`, `app/middleware/` | Flask Blueprints receive requests, decorators enforce roles, services perform auth/OTP/prediction logic, and middleware applies session and transport protections. |
+| Data layer | `app/models/`, migrations in `migrations/` | SQLAlchemy models define the single source of truth for users, bookings, OTPs, availability, reports, notifications, contacts, and services. |
+
+### 3. Technical Implementation: Python Web And Mobile
+
+Backend core:
+
+| Feature | Location |
+| --- | --- |
+| Python/Flask app startup | `run.py` |
+| App creation and Blueprint wiring | `app/__init__.py`, `create_app()` |
+| Configuration | `config.py` |
+| SQLAlchemy/Mail/Migration extensions | `app/extensions.py` |
+| JWT token creation/verification | `app/services/auth_service.py`, functions `create_jwt_token()` and `decode_jwt_token()` |
+| Login rate limiting | `app/services/rate_limiter.py` and usage in `app/api/auth.py` / `app/routes/auth.py` |
+| Input sanitization | `app/utils/sanitize.py`, function `clean_input()` |
+
+Endpoint map:
+
+| Endpoint | Method | File / function | Purpose |
+| --- | --- | --- | --- |
+| `/` | GET | `app/routes/main.py`, `index()` | Homepage, rendered by `app/templates/index.html` |
+| `/login` | GET/POST | `app/routes/auth.py`, `login()` | Web login page and form login |
+| `/signup` | GET/POST | `app/routes/auth.py`, `signup()` | Web registration with OTP validation |
+| `/forgot-password` | GET | `app/routes/auth.py`, `forgot_password()` | Password recovery page |
+| `/dashboard` | GET | `app/routes/dashboard.py`, `dashboard()` | Role-aware dashboard redirect |
+| `/dashboard/client` | GET | `app/routes/dashboard.py`, `client_dashboard()` | Client dashboard, `app/templates/dashboard.html` |
+| `/staff/dashboard` | GET | `app/routes/dashboard.py`, `staff_dashboard()` | Staff dashboard, `app/templates/staff_dashboard.html` |
+| `/admin/dashboard` | GET | `app/routes/dashboard.py`, `admin_dashboard()` | Admin dashboard, `app/templates/admin_dashboard.html` |
+| `/booking` | GET | `app/routes/booking.py`, `booking_page()` | Booking UI, `app/templates/booking_page.html` |
+| `/book` | POST | `app/routes/booking.py`, `book()` | Form-based appointment creation |
+| `/vetscan` | GET | `app/routes/vetscan.py`, `vetscan()` | VetScan UI, `app/templates/vetscan.html` |
+| `/predict` | POST | `app/routes/vetscan.py`, `predict()` | VetScan disease prediction API |
+| `/api/v1/auth/login` | POST | `app/api/auth.py`, `api_login()` | API authentication and JWT issuing |
+| `/api/v1/auth/send-otp` | POST | `app/api/auth.py`, `send_otp_endpoint()` | Signup/account OTP request |
+| `/api/v1/auth/verify-otp` | POST | `app/api/auth.py`, `verify_otp_endpoint()` | OTP verification |
+| `/api/v1/auth/forgot-password` | POST | `app/api/auth.py`, `forgot_password_endpoint()` | Password reset OTP request |
+| `/api/v1/auth/verify-reset-otp` | POST | `app/api/auth.py`, `verify_reset_otp_endpoint()` | Reset OTP verification and reset-token issue |
+| `/api/v1/auth/reset-password` | POST | `app/api/auth.py`, `reset_password_endpoint()` | Password reset completion |
+| `/api/v1/appointments` | GET/POST | `app/api/appointments.py`, `appointments()` | Fetch or create appointments |
+| `/api/v1/appointments/<booking_id>` | PUT/DELETE | `app/api/appointments.py`, `update_appointment()` / `delete_appointment()` | Staff/admin appointment updates |
+| `/api/v1/chatbot/astrid` | POST | `app/api/chatbot.py`, `astrid()` | ASTRID system navigation chatbot |
+| `/api/v1/schedule` | GET | `app/api/availability.py`, `get_schedule()` | Staff schedule lookup |
+| `/api/v1/schedule/block` | POST | `app/api/availability.py`, `block_time()` | Block appointment slots |
+| `/api/v1/schedule/unblock` | DELETE | `app/api/availability.py`, `unblock_time()` | Unblock appointment slots |
+
+Core data models:
+
+| Model class | File | Purpose |
+| --- | --- | --- |
+| `User` | `app/models/user.py` | User identity, role, password hash, active status |
+| `Booking` | `app/models/booking.py` | Appointment, owner, pet, medical, payment, status, handler fields |
+| `OtpVerification` | `app/models/otp_verification.py` | Hashed OTP code, expiry, attempts, reset token, single-use status |
+| `DoctorAvailability` | `app/models/availability.py` | Staff schedule and blocked time-slot state |
+| `Service` | `app/models/service.py` | Clinic service catalog |
+| `Report` | `app/models/report.py` | Clinical/operational report records |
+| `Notification` | `app/models/notification.py` | User notifications |
+| `Contact` | `app/models/contact.py` | Contact form submissions |
+
+### 4. Information Assurance And Security Strategy
+
+Security implementation map:
+
+| Control | Location | Implementation detail |
+| --- | --- | --- |
+| Password hashing | `app/models/user.py`, methods `set_password()` and `check_password()` | Uses Werkzeug password hashing, not plaintext storage |
+| OTP hashing | `app/services/otp_service.py`, function `create_otp()` | Generates 6-digit OTP through `secrets`, stores only `generate_password_hash(raw_otp)` |
+| OTP verification | `app/services/otp_service.py`, function `verify_otp_code()` | Enforces expiry, single use, and max attempts |
+| OTP reset token | `app/services/otp_service.py`, functions `verify_reset_otp()` and `reset_password_with_token()` | Issues short-lived token after OTP verification |
+| Brute-force login throttle | `app/services/rate_limiter.py`, used by `app/api/auth.py` and `app/routes/auth.py` | Returns `429` after repeated failed login attempts |
+| RBAC decorators | `app/middleware/decorators.py` | `login_required`, `admin_required`, `staff_required`, `jwt_required`, `role_required()` |
+| Session integrity | `app/middleware/security.py`, `register_security_hooks()` | Checks session IP and User-Agent fingerprint |
+| HTTPS/HSTS/security headers | `app/middleware/security.py`, `add_security_headers()` and `_https_required()` | Enforces production HTTPS and emits security headers |
+| SQL injection reduction | `app/models/` queried through SQLAlchemy ORM | Tested auth and booking flows use ORM queries instead of raw string SQL |
+
+Data classification mapped to storage:
+
+| Classification | Data examples | Location |
+| --- | --- | --- |
+| Critical | Password hashes, OTP hashes, reset tokens | `app/models/user.py`, `app/models/otp_verification.py` |
+| Critical | Medical notes, clinical diagnosis output, visit reasons | `app/models/booking.py`, `app/models/report.py`, `app/services/prediction_service.py` |
+| Confidential | Names, emails, phone numbers, address, pet details | `app/models/user.py`, `app/models/booking.py`, `app/models/contact.py` |
+| Public | Services, about/contact clinic content, PWA metadata | `app/templates/services.html`, `app/templates/about.html`, `app/templates/contact.html`, `app/static/manifest.json` |
+
+### 5. Reliability And Sustainability Plan
+
+Maintainability is achieved through folder-level separation:
+
+| Concern | Location |
+| --- | --- |
+| Route handlers | `app/routes/` |
+| JSON APIs | `app/api/` |
+| Business services | `app/services/` |
+| Database models | `app/models/` |
+| Security middleware and decorators | `app/middleware/` |
+| HTML templates | `app/templates/` |
+| Static CSS/JavaScript/images/PWA files | `app/static/` |
+| ML source and datasets | `ml/` |
+| Database migrations | `migrations/` |
+| QA automation | `scratch/full_system_qa.py` |
+
+The ML logic is isolated from page rendering. VetScan routing lives in `app/routes/vetscan.py`, but prediction logic lives in `app/services/prediction_service.py`. ASTRID API behavior lives in `app/api/chatbot.py`, while the more advanced hybrid ML class is in `ml/chatbot_ml.py`.
+
+### 6. Machine Learning Implementation: ASTRID And VetScan
+
+ASTRID navigation chatbot:
+
+| Feature | Location |
+| --- | --- |
+| API endpoint `/api/v1/chatbot/astrid` | `app/api/chatbot.py`, function `astrid()` |
+| Medical intercept keywords | `app/api/chatbot.py`, constant `MEDICAL_KEYWORDS` |
+| Scripted navigation FAQ responses | `app/api/chatbot.py`, constant `FAQ_ANSWERS` |
+| Hybrid ML class | `ml/chatbot_ml.py`, class `AstridHybridML` |
+| Hybrid response methods | `ml/chatbot_ml.py`, methods `check_emergency_override()` and `get_smart_response()` |
+| Processed knowledge base | `ml/dataset/processed/knowledge_base.json` |
+| Cached embeddings | `ml/dataset/processed/embeddings.npy` |
+
+ASTRID safety behavior:
+
+- It is documented and implemented as a system navigation assistant, not a medical diagnosis bot.
+- Symptom or disease-related text is intercepted by `MEDICAL_KEYWORDS` in `app/api/chatbot.py`.
+- Medical inputs return `mode: vetscan_redirect`, pushing the user toward VetScan instead of a free-form chatbot answer.
+
+VetScan diagnostic engine:
+
+| Feature | Location |
+| --- | --- |
+| VetScan page route | `app/routes/vetscan.py`, function `vetscan()` |
+| Prediction API route | `app/routes/vetscan.py`, function `predict()` |
+| Prediction service | `app/services/prediction_service.py`, function `predict_disease()` |
+| Feature builder | `app/services/prediction_service.py`, function `build_features()` |
+| Severity mapper | `app/services/prediction_service.py`, function `get_severity()` |
+| Model metadata | `ml/model/metadata.json` |
+| Serialized model | `ml/model/disease_model.pkl` |
+| Serialized encoders | `ml/model/encoders.pkl` |
+| Clinical datasets | `ml/dataset/clinical/` |
+| VetScan frontend JavaScript | `app/static/js/vetscan.js` |
+| VetScan styles | `app/static/css/vetscan.css` |
+
+### 7. Secure OTP Authentication System
+
+OTP implementation details:
+
+| Requirement | Location |
+| --- | --- |
+| 6-digit OTP generation | `app/services/otp_service.py`, function `generate_secure_otp()` |
+| Secure random source | `secrets.choice()` in `app/services/otp_service.py` |
+| Hashed OTP storage | `app/services/otp_service.py`, function `create_otp()` |
+| OTP database table/model | `app/models/otp_verification.py`, class `OtpVerification` |
+| 5-minute expiration | `app/services/otp_service.py`, `expires_at = datetime.utcnow() + timedelta(minutes=5)` |
+| Max 5 verification attempts | `app/services/otp_service.py`, function `verify_otp_code()` |
+| Max 3 OTP requests per minute | `app/services/otp_service.py`, function `create_otp()` |
+| Single-use OTP | `app/models/otp_verification.py`, field `is_used`; enforced by `verify_otp_code()` |
+| OTP modal component | `app/templates/components/otp_modal.html` |
+| Forgot password modal component | `app/templates/components/forgot_password_modal.html` |
+| OTP frontend logic | `app/static/js/otp_handler.js` |
+| Forgot password frontend logic | `app/static/js/forgot_password_handler.js` |
+
+### 8. UI/UX Design And Navigation Flow
+
+Template and route mapping:
+
+| User-facing area | Route | Template |
+| --- | --- | --- |
+| Landing page / homepage | `/` | `app/templates/index.html` |
+| About page | `/about` | `app/templates/about.html` |
+| Services page | `/services` | `app/templates/services.html` |
+| Contact page | `/contact` | `app/templates/contact.html` |
+| Login | `/login` | `app/templates/login.html` |
+| Signup | `/signup` | `app/templates/signup.html` |
+| Forgot password | `/forgot-password` | `app/templates/forgot_password.html` |
+| Client dashboard | `/dashboard/client` | `app/templates/dashboard.html` |
+| Staff dashboard | `/staff/dashboard` | `app/templates/staff_dashboard.html` |
+| Staff appointments | `/staff/appointments` | `app/templates/staff_appointments.html` |
+| Staff pet records | `/staff/pet-records` | `app/templates/staff_pet_records.html` |
+| Staff control panel | `/staff/control-panel` | `app/templates/staff_control_panel.html` |
+| Admin dashboard | `/admin/dashboard` | `app/templates/admin_dashboard.html` |
+| Admin audit logs | `/staff/audit-logs` | `app/templates/admin_audit_logs.html` |
+| VetScan | `/vetscan` | `app/templates/vetscan.html` |
+| Appointment booking | `/booking` | `app/templates/booking_page.html` |
+| Offline PWA fallback | `/offline` | `app/templates/offline.html` |
+| ASTRID chatbot component | included where rendered | `app/templates/chatbot.html` |
+
+Visual implementation:
+
+| Asset type | Location |
+| --- | --- |
+| Shared UI styles | `app/static/css/style.css` |
+| VetScan-specific styles | `app/static/css/vetscan.css` |
+| Shared JavaScript | `app/static/js/main.js` |
+| VetScan JavaScript | `app/static/js/vetscan.js` |
+| PWA manifest | `app/static/manifest.json` |
+| Service worker | `app/static/service-worker.js` |
+| PWA icons/images | `app/static/images/` |
+
+### 9. Code Structure Mapping
+
+| Component | Folder / file | Class / function / object |
+| --- | --- | --- |
+| Flask application factory | `app/__init__.py` | `create_app()` |
+| Blueprint registration | `app/routes/__init__.py` | `register_blueprints()` |
+| API gateway | `app/api/__init__.py` | `api_v1`, `register_api()` |
+| Homepage | `app/templates/index.html` and `app/routes/main.py` | `index()` |
+| Authentication web routes | `app/routes/auth.py` | `auth_bp`, `signup()`, `login()`, `forgot_password()`, `logout()` |
+| Authentication API | `app/api/auth.py` | `api_auth_bp`, `api_login()`, OTP/reset functions |
+| OTP service | `app/services/otp_service.py` | `generate_secure_otp()`, `create_otp()`, `verify_otp_code()` |
+| Auth/JWT service | `app/services/auth_service.py` | `create_jwt_token()`, `decode_jwt_token()` |
+| Rate limiter | `app/services/rate_limiter.py` | `is_limited()`, `record_failure()`, `clear_attempts()` |
+| Security middleware | `app/middleware/security.py` | `register_security_hooks()` |
+| RBAC decorators | `app/middleware/decorators.py` | `login_required`, `admin_required`, `staff_required`, `jwt_required`, `role_required()` |
+| Staff logic | `app/routes/staff.py` | `staff_bp`, appointment/report/control-panel functions |
+| Booking logic | `app/routes/booking.py`, `app/services/booking_service.py` | `booking_bp`, booking helper logic |
+| Appointment API | `app/api/appointments.py` | `api_appointments_bp` |
+| Schedule API | `app/api/availability.py` | `api_availability_bp` |
+| ASTRID API | `app/api/chatbot.py` | `api_chatbot_bp`, `astrid()` |
+| ASTRID hybrid ML | `ml/chatbot_ml.py` | `AstridHybridML` |
+| VetScan route | `app/routes/vetscan.py` | `vetscan_bp`, `vetscan()`, `predict()` |
+| VetScan ML service | `app/services/prediction_service.py` | `predict_disease()`, `build_features()`, `get_severity()` |
+| User model | `app/models/user.py` | `User` |
+| Booking model | `app/models/booking.py` | `Booking` |
+| OTP model | `app/models/otp_verification.py` | `OtpVerification` |
+| Availability model | `app/models/availability.py` | `DoctorAvailability` |
+| UI styles | `app/static/css/style.css` | Shared CSS rules |
+| PWA config | `app/static/manifest.json` | Web app manifest |
+| Service worker | `app/static/service-worker.js` | Offline/PWA shell behavior |
+
 ## Environment
 
 - Local app: Flask test client

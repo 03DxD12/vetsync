@@ -206,6 +206,7 @@
 <div style="max-width:860px;margin:0 auto;padding:3rem 1rem 5rem;">
 
     <form method="POST" action="{{ url_for('booking.book') }}" id="bookingForm" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <!-- PROGRESS -->
         <div class="progress-bar-wrap">

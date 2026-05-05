@@ -270,20 +270,20 @@
                 ? entry.date
                 : dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-            const notes = entry.notes ? `<div class="timeline-body"><strong>Notes:</strong> ${entry.notes}</div>` : '';
-            const diagnosis = entry.medical_history ? `<div class="timeline-body"><strong>Medical Log:</strong> ${entry.medical_history}</div>` : '';
-            const handler = entry.handled_by ? `<div class="timeline-body"><strong>Handled By:</strong> ${entry.handled_by}</div>` : '';
+            const notes = entry.notes ? `<div class="timeline-body"><strong>Notes:</strong> ${escapeHTML(entry.notes)}</div>` : '';
+            const diagnosis = entry.medical_history ? `<div class="timeline-body"><strong>Medical Log:</strong> ${escapeHTML(entry.medical_history)}</div>` : '';
+            const handler = entry.handled_by ? `<div class="timeline-body"><strong>Handled By:</strong> ${escapeHTML(entry.handled_by)}</div>` : '';
 
             return `
                 <div class="timeline-item">
                     <div class="timeline-dot"></div>
-                    <div class="timeline-date">${dateStr}</div>
+                    <div class="timeline-date">${escapeHTML(dateStr)}</div>
                     <div class="timeline-content">
                         <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
-                            <h4 class="timeline-title">${entry.service}</h4>
-                            <span class="status-chip">${entry.status}</span>
+                            <h4 class="timeline-title">${escapeHTML(entry.service)}</h4>
+                            <span class="status-chip">${escapeHTML(entry.status)}</span>
                         </div>
-                        <div class="timeline-body"><strong>Reason:</strong> ${entry.reason || 'Not specified'}</div>
+                        <div class="timeline-body"><strong>Reason:</strong> ${escapeHTML(entry.reason || 'Not specified')}</div>
                         ${diagnosis}
                         ${notes}
                         ${handler}
@@ -297,7 +297,7 @@
                 <div style="display:flex; align-items:center; gap:15px;">
                     <div style="font-size: 42px; background:#F8FAFC; width:72px; height:72px; display:flex; align-items:center; justify-content:center; border-radius:16px;">${emoji}</div>
                     <div>
-                        <h2 style="margin:0; font-size:32px;">${data.name}</h2>
+                        <h2 style="margin:0; font-size:32px;">${escapeHTML(data.name)}</h2>
                         <p style="margin:5px 0 0 0; color:#64748B; font-weight:600;">${data.type || 'Unknown type'} • ${data.breed || 'Unknown breed'}</p>
                     </div>
                 </div>

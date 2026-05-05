@@ -265,7 +265,12 @@
     const timeSlots = ["9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"];
     let blockedSlotsCache = [];
 
-    function getAuthHeaders() { return { 'Content-Type': 'application/json' }; }
+    function getAuthHeaders() { 
+        return { 
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
+        }; 
+    }
 
     function formatDate(d) {
         return d.toISOString().split('T')[0];

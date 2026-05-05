@@ -17,6 +17,7 @@
             <div class="contact-item"><span>🕐</span><div><strong>Hours</strong><p>Mon–Sat: 8AM–8PM | Emergency: 24/7</p></div></div>
         </div>
         <form class="contact-form" action="{{ url_for('main.contact') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <h2>Send a Message</h2>
             <div class="form-group">
                 <input type="text" name="name" placeholder="Your Name" required>

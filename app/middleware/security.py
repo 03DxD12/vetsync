@@ -5,7 +5,13 @@ def register_security_hooks(app):
     """Registers before/after request security hooks on the app."""
 
     @app.before_request
-    def verify_session_integrity():
+    def verify_request_safety():
+        from app.utils.security import verify_csrf_token
+        
+        # 1. CSRF Protection (Global Enforcement)
+        verify_csrf_token()
+
+        # 2. HTTPS Enforcement
         if _https_required(app) and not _request_is_secure():
             return redirect(request.url.replace('http://', 'https://', 1), code=301)
 

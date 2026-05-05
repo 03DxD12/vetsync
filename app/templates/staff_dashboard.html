@@ -939,28 +939,28 @@
                 list.innerHTML += `
                     <div class="detailed-card">
                         <div class="appt-main">
-                            <div class="appt-time-tag">${a.slot}</div>
-                            <div class="appt-pet-name">${petEmoji(a.pet_type)} ${a.pet_name}</div>
-                            <div class="appt-client-info">${a.service} • <strong>Client:</strong> ${a.client_name}</div>
+                            <div class="appt-time-tag">${escapeHTML(a.slot)}</div>
+                            <div class="appt-pet-name">${petEmoji(a.pet_type)} ${escapeHTML(a.pet_name)}</div>
+                            <div class="appt-client-info">${escapeHTML(a.service)} • <strong>Client:</strong> ${escapeHTML(a.client_name)}</div>
                             <div style="margin-top:10px;">
-                                <span class="status-pill status-${a.status}">${a.status}</span>
+                                <span class="status-pill status-${escapeHTML(a.status)}">${escapeHTML(a.status.toUpperCase())}</span>
                             </div>
                         </div>
                         <div class="appt-actions" style="display:flex; gap:8px;">
                             // PENDING
                             ${a.status === 'pending' ? `
-                                <button class="action-btn" style="background:#E0F2FE; color:#0369A1; border:1px solid #BAE6FD;" onclick="updateApptStatus(${a.id}, 'confirmed', '${dateStr}')">✓ Accept</button>
-                                <button class="action-btn" style="background:#FFF7ED; color:#C2410C; border:1px solid #FFEDD5;" onclick="updateApptStatus(${a.id}, 'cancelled', '${dateStr}')">✕ Cancel</button>
+                                <button class="action-btn" style="background:#E0F2FE; color:#0369A1; border:1px solid #BAE6FD;" onclick="updateApptStatus(${a.id}, 'confirmed', '${escapeHTML(dateStr)}')">✓ Accept</button>
+                                <button class="action-btn" style="background:#FFF7ED; color:#C2410C; border:1px solid #FFEDD5;" onclick="updateApptStatus(${a.id}, 'cancelled', '${escapeHTML(dateStr)}')">✕ Cancel</button>
                             ` : ''}
 
                             // CONFIRMED
                             ${a.status === 'confirmed' ? `
-                                <button class="action-btn" style="background:#DCFCE7; color:#15803D; border:1px solid #BBF7D0;" onclick="updateApptStatus(${a.id}, 'completed', '${dateStr}')">🏁 Finish</button>
-                                <button class="action-btn" style="background:#FFF7ED; color:#C2410C; border:1px solid #FFEDD5;" onclick="updateApptStatus(${a.id}, 'cancelled', '${dateStr}')">✕ Cancel</button>
+                                <button class="action-btn" style="background:#DCFCE7; color:#15803D; border:1px solid #BBF7D0;" onclick="updateApptStatus(${a.id}, 'completed', '${escapeHTML(dateStr)}')">🏁 Finish</button>
+                                <button class="action-btn" style="background:#FFF7ED; color:#C2410C; border:1px solid #FFEDD5;" onclick="updateApptStatus(${a.id}, 'cancelled', '${escapeHTML(dateStr)}')">✕ Cancel</button>
                             ` : ''}
 
                             // CANCEL (Always)
-                            <button class="action-btn" style="background:#FEF2F2; color:#B91C1C; border:1px solid #FECACA; padding: 6px 12px;" onclick="deleteApptFromCalendar(${a.id}, '${dateStr}')" title="Cancel Appointment">🗑️</button>
+                            <button class="action-btn" style="background:#FEF2F2; color:#B91C1C; border:1px solid #FECACA; padding: 6px 12px;" onclick="deleteApptFromCalendar(${a.id}, '${escapeHTML(dateStr)}')" title="Cancel Appointment">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -1035,6 +1035,10 @@
         const token = localStorage.getItem('access_token');
         if (token) {
             headers.Authorization = `Bearer ${token}`;
+        }
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (csrfToken) {
+            headers['X-CSRF-Token'] = csrfToken;
         }
         return headers;
     }

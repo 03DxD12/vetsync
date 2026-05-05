@@ -875,7 +875,12 @@
             window.location.href = '/login?msg=Session+Expired';
             return null;
         }
-        return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        return { 
+            'Content-Type': 'application/json', 
+            'Authorization': `Bearer ${token}`,
+            'X-CSRF-Token': csrfToken
+        };
     }
 
     async function loadStaff() {
@@ -901,9 +906,9 @@
                 // Table
                 body.insertAdjacentHTML('beforeend', `
                     <tr>
-                        <td><strong>${u.first_name} ${u.last_name}</strong></td>
-                        <td>${u.email}</td>
-                        <td><span style="text-transform:capitalize;">${roleLabel}</span></td>
+                        <td><strong>${escapeHTML(u.first_name)} ${escapeHTML(u.last_name)}</strong></td>
+                        <td>${escapeHTML(u.email)}</td>
+                        <td><span style="text-transform:capitalize;">${escapeHTML(roleLabel)}</span></td>
                         <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
                         <td>
                             <div class="table-actions">
@@ -917,14 +922,14 @@
                 // Cards
                 cards.insertAdjacentHTML('beforeend', `
                     <div class="admin-card">
-                        <div class="ac-header">
-                            <span class="ac-val"><strong>${u.first_name} ${u.last_name}</strong></span>
-                            <span class="status-pill ${statusClass}">${statusLabel}</span>
-                        </div>
-                        <div class="ac-body">
-                            <div class="ac-row"><span class="ac-label">Email:</span><span class="ac-val">${u.email}</span></div>
-                            <div class="ac-row"><span class="ac-label">Role:</span><span class="ac-val" style="text-transform:capitalize;">${roleLabel}</span></div>
-                        </div>
+                         <div class="ac-header">
+                             <span class="ac-val"><strong>${escapeHTML(u.first_name)} ${escapeHTML(u.last_name)}</strong></span>
+                             <span class="status-pill ${statusClass}">${statusLabel}</span>
+                         </div>
+                         <div class="ac-body">
+                             <div class="ac-row"><span class="ac-label">Email:</span><span class="ac-val">${escapeHTML(u.email)}</span></div>
+                             <div class="ac-row"><span class="ac-label">Role:</span><span class="ac-val" style="text-transform:capitalize;">${escapeHTML(roleLabel)}</span></div>
+                         </div>
                         <div class="ac-footer">
                             <button class="btn small primary" onclick="openEditModal(${u.id})" style="flex:1;">Edit</button>
                             <button class="btn small ${u.is_active ? 'danger-outline' : ''}" onclick="toggleStatus(${u.id}, ${u.is_active})" style="flex:1;">${u.is_active ? 'Deactivate' : 'Activate'}</button>
@@ -982,16 +987,16 @@
                 body.insertAdjacentHTML('beforeend', `
                     <tr>
                         <td>
-                            <strong>${dateStr}</strong>
-                            <br><small>${b.slot}</small>
+                            <strong>${escapeHTML(dateStr)}</strong>
+                            <br><small>${escapeHTML(b.slot)}</small>
                         </td>
                         <td>
-                            <strong>${b.pet_name || 'N/A'}</strong>
-                            <br><small>${b.name || 'Unknown client'}</small>
+                            <strong>${escapeHTML(b.pet_name || 'N/A')}</strong>
+                            <br><small>${escapeHTML(b.name || 'Unknown client')}</small>
                         </td>
-                        <td>${b.service_name || 'Unknown service'}</td>
-                        <td><span class="status-pill ${statusClass}">${statusStr.toUpperCase()}</span></td>
-                        <td>${b.handled_by || 'System / Not Recorded'}</td>
+                        <td>${escapeHTML(b.service_name || 'Unknown service')}</td>
+                        <td><span class="status-pill ${statusClass}">${escapeHTML(statusStr.toUpperCase())}</span></td>
+                        <td>${escapeHTML(b.handled_by || 'System / Not Recorded')}</td>
                     </tr>
                 `);
 

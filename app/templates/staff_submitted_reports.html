@@ -223,6 +223,9 @@
     document.getElementById('submissionForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        const btn = document.getElementById('submitBtn');
+        if (btn.disabled) return;
+
         const id = document.getElementById('editReportId').value;
         const payload = {
             title: document.getElementById('repTitle').value,
@@ -232,6 +235,9 @@
         };
 
         try {
+            btn.disabled = true;
+            btn.innerText = 'Processing...';
+
             let url, method;
             if (id) {
                 // Editing existing report
@@ -244,11 +250,14 @@
             }
 
             const token = localStorage.getItem('access_token');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            
             const res = await fetch(url, {
                 method: method,
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': token ? `Bearer ${token}` : ''
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'X-CSRF-Token': csrfToken
                 },
                 body: JSON.stringify(payload)
             });
@@ -258,10 +267,14 @@
                 location.reload();
             } else {
                 alert("Failed to process request.");
+                btn.disabled = false;
+                btn.innerText = id ? "Save Changes" : "Submit Report";
             }
         } catch (error) {
             console.error(error);
             alert("An error occurred.");
+            btn.disabled = false;
+            btn.innerText = id ? "Save Changes" : "Submit Report";
         }
     });
 </script>

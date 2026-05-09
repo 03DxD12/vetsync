@@ -61,7 +61,12 @@ def report_detail(current_user_jwt, report_id):
             report.status = data['status']
         if 'admin_comment' in data:
             report.admin_comment = data['admin_comment']
-        if 'title' in data or 'description' in data:
+        
+        # Check if content actually changed before logging history
+        new_title = data.get('title', report.title)
+        new_desc = data.get('description', report.description)
+        
+        if new_title != report.title or new_desc != report.description:
             # store previous version in history array
             history_entry = {
                 "title": report.title,
@@ -73,10 +78,8 @@ def report_detail(current_user_jwt, report_id):
             hist.append(history_entry)
             report.edit_history = hist
             
-            if 'title' in data:
-                report.title = data['title']
-            if 'description' in data:
-                report.description = data['description']
+            report.title = new_title
+            report.description = new_desc
 
         db.session.commit()
         return jsonify({'message': 'Report updated successfully'})

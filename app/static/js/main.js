@@ -77,17 +77,41 @@ document.addEventListener('keydown', (event) => {
 });
 
 // ===================== SMOOTH SCROLL =====================
-document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+document.querySelectorAll('a[href*="#"]').forEach((anchor) => {
     anchor.addEventListener('click', function (event) {
-        const selector = this.getAttribute('href');
-        if (!selector || selector === '#') return;
-        const target = document.querySelector(selector);
-        if (target) {
-            event.preventDefault();
-            window.scrollTo({
-                top: target.getBoundingClientRect().top + window.scrollY - 80,
-                behavior: 'smooth',
-            });
+        const href = this.getAttribute('href');
+        
+        // Handle both "#anchor" and "/path#anchor"
+        let targetId = '';
+        if (href.startsWith('#')) {
+            targetId = href;
+        } else {
+            try {
+                const url = new URL(this.href, window.location.origin);
+                if (url.pathname === window.location.pathname && url.hash) {
+                    targetId = url.hash;
+                }
+            } catch (e) { return; }
+        }
+
+        if (targetId) {
+            const target = document.querySelector(targetId);
+            if (target) {
+                event.preventDefault();
+                const offset = 80;
+                const bodyRect = document.body.getBoundingClientRect().top;
+                const elementRect = target.getBoundingClientRect().top;
+                const elementPosition = elementRect - bodyRect;
+                const offsetPosition = elementPosition - offset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth',
+                });
+                
+                // If menu is open, close it
+                if (typeof setMenuState === 'function') setMenuState(false);
+            }
         }
     });
 });

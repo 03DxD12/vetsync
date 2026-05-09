@@ -284,6 +284,22 @@
     .appt-actions {
         display: flex;
         gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 600px) {
+        .detailed-card {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .appt-actions {
+            width: 100%;
+        }
+        .appt-actions .action-btn {
+            flex: 1;
+            justify-content: center;
+        }
     }
 
     /* Mobile scaling logic */
@@ -703,6 +719,7 @@
                             {# PENDING ACTIONS #}
                             {% if b.status == 'pending' %}
                             <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="status" value="confirmed">
                                 <button type="submit" class="action-btn" style="background: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD;" title="Confirm Appointment">✓ Accept</button>
                             </form>
@@ -711,6 +728,7 @@
                             {# CONFIRMED ACTIONS #}
                             {% if b.status == 'confirmed' %}
                             <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="status" value="completed">
                                 <button type="submit" class="action-btn" style="background: #DCFCE7; color: #15803D; border: 1px solid #BBF7D0;" title="Mark as Completed">🏁 Finish</button>
                             </form>
@@ -719,6 +737,7 @@
                             {# CANCEL ACTION (for Pending or Confirmed) #}
                             {% if b.status == 'pending' or b.status == 'confirmed' %}
                             <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="status" value="cancelled">
                                 <button type="submit" class="action-btn" style="background: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5;" title="Cancel Appointment">✕ Cancel</button>
                             </form>
@@ -726,6 +745,7 @@
                             
                             {# CANCEL ACTION (Always available) #}
                             <form action="{{ url_for('staff.delete_booking', bid=b.id) }}" method="POST" onsubmit="return confirm('Mark this appointment as cancelled?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="action-btn" style="background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; padding: 6px 8px;" title="Cancel Appointment">🗑️</button>
                             </form>
                         </td>
@@ -773,6 +793,7 @@
                         {# PENDING ACTIONS #}
                         {% if b.status == 'pending' %}
                         <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="status" value="confirmed">
                             <button type="submit" class="action-btn action-accept">✓ Accept</button>
                         </form>
@@ -781,6 +802,7 @@
                         {# CONFIRMED ACTIONS #}
                         {% if b.status == 'confirmed' %}
                         <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="status" value="completed">
                             <button type="submit" class="action-btn action-finish">🏁 Finish</button>
                         </form>
@@ -789,6 +811,7 @@
                         {# CANCEL ACTION #}
                         {% if b.status == 'pending' or b.status == 'confirmed' %}
                         <form action="{{ url_for('staff.update_booking_status', bid=b.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="status" value="cancelled">
                             <button type="submit" class="action-btn action-cancel">✕ Cancel</button>
                         </form>
@@ -796,6 +819,7 @@
                         
                         {# CANCEL ACTION #}
                         <form action="{{ url_for('staff.delete_booking', bid=b.id) }}" method="POST" onsubmit="return confirm('Mark this appointment as cancelled?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="action-btn action-delete">🗑️ Cancel</button>
                         </form>
                     </div>
@@ -943,23 +967,20 @@
                             <div class="appt-pet-name">${petEmoji(a.pet_type)} ${escapeHTML(a.pet_name)}</div>
                             <div class="appt-client-info">${escapeHTML(a.service)} • <strong>Client:</strong> ${escapeHTML(a.client_name)}</div>
                             <div style="margin-top:10px;">
-                                <span class="status-pill status-${escapeHTML(a.status)}">${escapeHTML(a.status.toUpperCase())}</span>
+                                <span class="status-badge status-${escapeHTML(a.status)}">${escapeHTML(a.status.toUpperCase())}</span>
                             </div>
                         </div>
-                        <div class="appt-actions" style="display:flex; gap:8px;">
-                            // PENDING
+                        <div class="appt-actions">
                             ${a.status === 'pending' ? `
                                 <button class="action-btn" style="background:#E0F2FE; color:#0369A1; border:1px solid #BAE6FD;" onclick="updateApptStatus(${a.id}, 'confirmed', '${escapeHTML(dateStr)}')">✓ Accept</button>
                                 <button class="action-btn" style="background:#FFF7ED; color:#C2410C; border:1px solid #FFEDD5;" onclick="updateApptStatus(${a.id}, 'cancelled', '${escapeHTML(dateStr)}')">✕ Cancel</button>
                             ` : ''}
 
-                            // CONFIRMED
                             ${a.status === 'confirmed' ? `
                                 <button class="action-btn" style="background:#DCFCE7; color:#15803D; border:1px solid #BBF7D0;" onclick="updateApptStatus(${a.id}, 'completed', '${escapeHTML(dateStr)}')">🏁 Finish</button>
                                 <button class="action-btn" style="background:#FFF7ED; color:#C2410C; border:1px solid #FFEDD5;" onclick="updateApptStatus(${a.id}, 'cancelled', '${escapeHTML(dateStr)}')">✕ Cancel</button>
                             ` : ''}
 
-                            // CANCEL (Always)
                             <button class="action-btn" style="background:#FEF2F2; color:#B91C1C; border:1px solid #FECACA; padding: 6px 12px;" onclick="deleteApptFromCalendar(${a.id}, '${escapeHTML(dateStr)}')" title="Cancel Appointment">🗑️</button>
                         </div>
                     </div>

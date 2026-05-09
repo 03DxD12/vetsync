@@ -93,23 +93,26 @@ def edit_report(id):
     if report.user_id != user.id:
         return jsonify({'error': 'Unauthorized'}), 403
 
-    # store previous version in history array
-    history_entry = {
-        "title": report.title,
-        "content": report.description,
-        "edited_at": datetime.utcnow().isoformat()
-    }
+    new_title = (request.form.get("title") or (request.json.get("title") if request.is_json else None)) or report.title
+    new_desc = (request.form.get("content") or (request.json.get("content") if request.is_json else None)) or report.description
 
-    if not report.edit_history:
-        report.edit_history = []
-    
-    # SQLAlchemy requires explicit assignment for JSON fields to detect mutation
-    hist = list(report.edit_history)
-    hist.append(history_entry)
-    report.edit_history = hist
+    if new_title != report.title or new_desc != report.description:
+        # store previous version in history array
+        history_entry = {
+            "title": report.title,
+            "content": report.description,
+            "edited_at": datetime.utcnow().isoformat()
+        }
 
-    report.title = request.form.get("title") or request.json.get("title")
-    report.description = request.form.get("content") or request.json.get("content")
+        if not report.edit_history:
+            report.edit_history = []
+        
+        hist = list(report.edit_history)
+        hist.append(history_entry)
+        report.edit_history = hist
+
+        report.title = new_title
+        report.description = new_desc
 
     db.session.commit()
     return redirect(url_for('staff.submitted_reports'))

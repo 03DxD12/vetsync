@@ -63,7 +63,10 @@ async function runPrediction() {
   try {
     const res = await fetch('/predict', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': window.CSRF_TOKEN
+      },
       body: JSON.stringify(payload),
     });
     const data = await res.json();

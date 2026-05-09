@@ -195,5 +195,8 @@
 <script>
   const breedsByAnimal = JSON.parse(document.getElementById('breeds-data').textContent);
 </script>
-<script src="{{ url_for('static', filename='js/vetscan.js') }}"></script>
+<script>
+  window.CSRF_TOKEN = "{{ csrf_token() }}";
+</script>
+<script src="{{ url_for('static', filename='js/vetscan.js', v='1.1') }}"></script>
 {% endblock %}

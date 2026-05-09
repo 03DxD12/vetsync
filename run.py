@@ -1,10 +1,12 @@
 import os
 from dotenv import load_dotenv
+
+# load_dotenv must be called BEFORE importing the app to ensure config picks up .env values
+load_dotenv()
+
 from app import create_app
 from app.extensions import db
 from sqlalchemy import text
-
-load_dotenv()
 
 app = create_app(os.getenv('FLASK_ENV', 'default'))
 

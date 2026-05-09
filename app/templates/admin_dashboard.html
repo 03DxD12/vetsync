@@ -154,6 +154,7 @@
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 1rem;
+        scroll-margin-top: 5.5rem;
     }
 
     .stat-card,
@@ -166,32 +167,44 @@
     }
 
     .stat-card {
-        min-height: 132px;
-        padding: 1.35rem;
+        min-height: 140px;
+        padding: 1.5rem;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        gap: 0.65rem;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        text-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-bottom: 4px solid var(--admin-accent);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(26, 60, 143, 0.15);
     }
 
     .stat-label {
-        color: var(--admin-muted);
-        font-size: 0.84rem;
-        font-weight: 700;
+        color: var(--admin-primary);
+        font-size: 0.9rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .stat-value {
-        color: var(--admin-text);
+        color: var(--admin-accent);
         font-family: 'Nunito', sans-serif;
-        font-size: 2.15rem;
+        font-size: 2.75rem;
         font-weight: 900;
         line-height: 1;
+        text-shadow: 0 2px 8px rgba(0, 201, 177, 0.15);
     }
 
     .stat-note {
-        color: var(--admin-primary);
-        font-size: 0.78rem;
-        font-weight: 800;
+        color: var(--admin-muted);
+        font-size: 0.82rem;
+        font-weight: 600;
     }
 
     .module-grid {
@@ -455,20 +468,13 @@
         
         .hide-mobile { display: none !important; }
         .show-mobile { display: block !important; }
-        
-        .admin-module-nav {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            padding: 0.5rem;
-        }
     }
 
     @media (max-width: 480px) {
         .stats-grid { grid-template-columns: 1fr; }
-        .admin-module-nav { grid-template-columns: 1fr; }
         .admin-title { font-size: 1.75rem; }
-        .stat-card { padding: 1rem; min-height: 110px; }
-        .stat-value { font-size: 1.75rem; }
+        .stat-card { padding: 1.25rem; min-height: 120px; }
+        .stat-value { font-size: 2.15rem; }
     }
 
     /* Admin Mobile Cards */
@@ -556,19 +562,12 @@
             </div>
         </header>
 
-        <nav class="admin-module-nav" aria-label="Admin dashboard sections">
-            <a class="module-link" href="/admin/dashboard">Dashboard</a>
-            <a class="module-link" href="#user-management">User Management</a>
-            <a class="module-link" href="#system-monitoring">System Monitoring</a>
-            <a class="module-link" href="#clinical-reports">Review Reports</a>
-            <a class="module-link" href="#audit-log">Audit Log</a>
-        </nav>
 
         <div class="offline-banner" id="adminOfflineBanner">
             Admin data is read-only while offline. Reconnect to manage users, reports, and appointment records.
         </div>
 
-        <section class="stats-grid" id="system-monitoring">
+        <section class="stats-grid" id="stats-overview">
             <div class="stat-card">
                 <span class="stat-label">Total Users</span>
                 <span class="stat-value">{{ total_users }}</span>
@@ -688,7 +687,7 @@
                             </select>
                             
                             <div style="display:flex; gap:10px; margin-top:10px;">
-                                <button class="btn primary" onclick="submitReview()">Save Changes</button>
+                                <button class="btn primary" id="btnSubmitReview" onclick="submitReview()">Save Changes</button>
                                 <button class="btn danger-outline" id="btnSoftDelete" onclick="deleteReport()">Delete Report</button>
                             </div>
                         </div>
@@ -697,7 +696,7 @@
                 </div>
             </section>
 
-            <section class="section-card" id="audit-log">
+            <section class="section-card" id="recent-activity">
                 <div class="section-header">
                     <div>
                         <p class="section-kicker">Audit Logs</p>
@@ -1115,6 +1114,9 @@
     async function submitReview() {
         if (!currentReportId) return;
         
+        const btn = document.getElementById('btnSubmitReview');
+        if (btn.disabled) return; // Prevent double trigger
+        
         const headers = getAuthHeaders();
         if (!headers) return;
 
@@ -1125,7 +1127,10 @@
         };
 
         try {
-            // we use the main update endpoint for full capability, or the review endpoint
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+            
+            // we use the main update endpoint for full capability
             const res = await fetch(`/api/v1/reports/${currentReportId}`, {
                 method: 'PUT',
                 headers,
@@ -1140,6 +1145,9 @@
         } catch (error) {
             appendAudit(error.message, 'Issue');
             alert('Failed to save. Please try again.');
+        } finally {
+            btn.disabled = false;
+            btn.innerText = 'Save Changes';
         }
     }
 

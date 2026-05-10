@@ -38,7 +38,10 @@ document.getElementById('sendResetOtpBtn').addEventListener('click', async () =>
     try {
         const response = await fetch('/api/v1/auth/forgot-password', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
+            },
             body: JSON.stringify({ email: email })
         });
         
@@ -80,7 +83,10 @@ async function verifyResetOtp() {
     try {
         const response = await fetch('/api/v1/auth/verify-reset-otp', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
+            },
             body: JSON.stringify({ email: resetEmail, otp: otp })
         });
         
@@ -128,7 +134,10 @@ document.getElementById('finalizeResetBtn').addEventListener('click', async () =
     try {
         const response = await fetch('/api/v1/auth/reset-password', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
+            },
             body: JSON.stringify({ 
                 email: resetEmail, 
                 token: resetToken,

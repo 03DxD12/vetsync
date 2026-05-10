@@ -222,6 +222,9 @@ async function syncOfflineBookings() {
                 method: 'POST',
                 body: formData,
                 credentials: 'include',
+                headers: {
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
+                }
             });
 
             if (response.ok || response.redirected || response.status === 400) {

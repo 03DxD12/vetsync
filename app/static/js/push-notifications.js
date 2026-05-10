@@ -70,7 +70,8 @@ async function syncSubscriptionWithServer(subscription) {
             }),
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
             }
         });
         console.log('Subscription synced with server.');

@@ -90,7 +90,10 @@ async function verifyOtp() {
     try {
         const response = await fetch('/api/v1/auth/verify-otp', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
+            },
             body: JSON.stringify({ email: currentEmail, otp: otp })
         });
         
@@ -127,7 +130,10 @@ document.getElementById('resendOtpBtn').addEventListener('click', async () => {
     try {
         const response = await fetch('/api/v1/auth/send-otp', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
+            },
             body: JSON.stringify({ email: currentEmail })
         });
         

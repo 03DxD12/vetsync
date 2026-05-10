@@ -12,6 +12,7 @@
     <div class="auth-card signup-card">
         <h2 class="auth-title">Sign Up</h2>
         <form class="auth-form" action="{{ url_for('auth.signup') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="auth-row">
                 <div class="auth-field">
                     <input type="text" name="first_name" id="first_name" placeholder="Enter your First Name" required>
@@ -50,7 +51,7 @@
 
 <!-- OTP Components -->
 {% include 'components/otp_modal.html' %}
-<script src="{{ url_for('static', filename='js/otp_handler.js') }}"></script>
+<script src="{{ url_for('static', filename='js/otp_handler.js', v='1.1') }}"></script>
 
 <script>
     const signupForm = document.querySelector('.auth-form');
@@ -74,25 +75,40 @@
         signupBtn.innerText = "Sending OTP...";
         
         try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (!csrfToken) {
+                console.error("CSRF token meta tag missing");
+            }
+
             const response = await fetch('/api/v1/auth/send-otp', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken
+                },
                 body: JSON.stringify({ email: email })
             });
             
-            const data = await response.json();
+            let data;
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                data = await response.json();
+            }
+
             if (response.ok) {
                 openOtpModal(email);
-                if (data.dev_otp) {
+                if (data && data.dev_otp) {
                     alert(`Local testing OTP: ${data.dev_otp}`);
                 }
             } else {
-                alert(data.message || "Failed to send OTP. Please try again.");
+                const errorMsg = (data && data.message) || (response.status === 403 ? "Security session expired. Please refresh the page." : "Failed to send OTP. Please try again.");
+                alert(errorMsg);
                 signupBtn.disabled = false;
                 signupBtn.innerText = "Sign up";
             }
         } catch (error) {
-            alert("Connection error.");
+            console.error("Signup Fetch Error:", error);
+            alert("Connection error. Please check your internet or refresh the page.");
             signupBtn.disabled = false;
             signupBtn.innerText = "Sign up";
         }
